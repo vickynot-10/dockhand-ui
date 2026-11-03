@@ -1,4 +1,4 @@
-import Projects from "./Projects/Project";
+import Projects from "./MainProjects/Project";
 
 export const metadata = {
   title: "Dashboard |",
