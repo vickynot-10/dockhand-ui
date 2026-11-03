@@ -6,7 +6,7 @@ export default async function AuthLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const token = cookieStore.get("feature_token");
+  const token = cookieStore.get("dockhand");
 
   if (token) {
     return redirect("/");

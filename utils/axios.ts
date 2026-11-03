@@ -21,7 +21,7 @@ api.interceptors.response.use(
   },
   async (error) => {
     const message =
-      error.response?.data?.message ||
+      error.response?.data?.msg ||
       error.response?.data?.error ||
       error.message ||
       "Something went wrong";

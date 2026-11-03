@@ -12,6 +12,7 @@ import {
 } from "@/types/auth.types";
 
 export function useSignup() {
+  const router = useRouter();
   return useMutation({
     mutationFn: async (data: SignUpFormValues) => {
       const res = await api.post("/auth/sign-up", data);
@@ -20,6 +21,7 @@ export function useSignup() {
     onSuccess: (data) => {
       if (data.success) {
         toast.success(data.msg ?? "Account created successfully");
+        router.push("/");
       }
     },
   });

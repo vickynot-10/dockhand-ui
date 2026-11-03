@@ -16,6 +16,7 @@ import {
   FlaskConical,
   LayoutDashboard,
   LucideIcon,
+  Workflow,
   History,
   KeyRoundIcon,
 } from "lucide-react";
@@ -46,7 +47,7 @@ export type NavItem = {
 
 export const navData: NavItem[] = [
   { label: "Overview", isSection: true },
-  { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { title: "Projects", icon: Workflow, href: "/" },
 
   { label: "Manage", isSection: true },
   { title: "Apps", icon: Boxes, href: "/apps" },
