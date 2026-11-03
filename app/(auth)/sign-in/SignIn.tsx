@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SignInFormValues } from "@/types/auth.types";
 import { useSignin } from "@/hooks/queries/useAuth";
+import GithubButton from "../components/GithubLogin";
 
 const fieldVariants: Variants = {
   hidden: { opacity: 0, y: 12 },
@@ -175,6 +176,21 @@ export default function SignIn() {
                   Sign up
                 </Link>
               </motion.p>
+              <motion.div
+                variants={fieldVariants}
+                custom={7}
+                initial="hidden"
+                animate="visible"
+                className="space-y-5"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">OR</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+
+                <GithubButton />
+              </motion.div>
             </form>
           </motion.div>
         </div>

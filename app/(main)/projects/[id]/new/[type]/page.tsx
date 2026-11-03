@@ -1,3 +1,5 @@
+import CreateNewService from "./CreateService";
+
 type Props = {
   params: Promise<{
     id: string;
@@ -10,5 +12,5 @@ export default async function ProjectCreateServicesPage({ params }: Props) {
 
   if (!id || !type) return null;
 
-  return <>hii </>;
+  return <CreateNewService type={type} id={id} />;
 }

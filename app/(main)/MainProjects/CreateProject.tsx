@@ -183,7 +183,7 @@ export default function CreateOrEditProjects({
                   <Input
                     id="project_name"
                     type="text"
-                    placeholder="e.g. portfolio-website"
+                    placeholder="Portfolio"
                     className="h-12 text-base"
                     {...register("project_name", {
                       required: "Project name is required",
@@ -203,7 +203,7 @@ export default function CreateOrEditProjects({
                   <Input
                     id="environment"
                     type="text"
-                    placeholder="e.g. staging"
+                    placeholder="Production"
                     className="h-12 text-base"
                     {...register("environment", {
                       required: "Environment is required",
