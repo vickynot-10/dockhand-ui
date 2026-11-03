@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/date";
 import CreateOrEditProjects from "./CreateProject";
+import Link from "next/link";
 
 export type Project = {
   id: string;
@@ -49,24 +50,26 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
       }}
       className="flex min-h-34 flex-col justify-between gap-4 rounded-md border bg-card p-5 transition-colors hover:border-foreground"
     >
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="truncate text-lg font-semibold">
-          {project.project_name}
-        </h3>
-        <CreateOrEditProjects
-          data={project}
-          trigger={(props) => <SettingsTrigger {...props} />}
-        />
-      </div>
+      <Link className=" h-full w-full" href={`/projects/${project.id}`}>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="truncate text-lg font-semibold">
+            {project.project_name}
+          </h3>
+          <CreateOrEditProjects
+            data={project}
+            trigger={(props) => <SettingsTrigger {...props} />}
+          />
+        </div>
 
-      <div className="space-y-2">
-        <span className="inline-block rounded-sm bg-muted px-3 py-1 text-sm">
-          {project.environment}
-        </span>
-        <p className="text-sm text-muted-foreground">
-          Last updated {datePart} · {timePart}
-        </p>
-      </div>
+        <div className="space-y-2">
+          <span className="inline-block rounded-sm bg-muted px-3 py-1 text-sm">
+            {project.environment}
+          </span>
+          <p className="text-sm text-muted-foreground">
+            Last updated {datePart} · {timePart}
+          </p>
+        </div>
+      </Link>
     </motion.div>
   );
 }

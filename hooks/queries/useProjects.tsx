@@ -16,6 +16,20 @@ export function useGetProjects() {
   });
 }
 
+export function useGetProjectServices(id: string) {
+  return useQuery({
+    queryKey: [QUERY_KEY + "services", id],
+    queryFn: async () => {
+      const res = await api.get("/projects/services", {
+        params: { id },
+      });
+      return res.data ?? null;
+    },
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useSaveProjects() {
   const queryClient = useQueryClient();
   return useMutation({
