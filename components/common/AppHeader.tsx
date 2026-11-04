@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import {
-  LogOutIcon,
-  MoonIcon,
-  SearchIcon,
-  SunIcon,
-  UserIcon,
-} from "lucide-react";
+import { MoonIcon, SearchIcon, SunIcon } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
