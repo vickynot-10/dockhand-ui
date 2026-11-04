@@ -35,7 +35,7 @@ export default function GitHubTab({ id, type }: Props) {
     control,
     register,
     handleSubmit,
-    setValue,
+
     formState: { errors },
   } = methods;
 
@@ -60,7 +60,7 @@ export default function GitHubTab({ id, type }: Props) {
       env_vars: values.env_vars.filter((v) => v.key.trim()),
       deploy_type: DEPLOY_TYPE.GITHUB,
       type,
-      id,
+      project_id: id,
     };
     mutate(payload);
   }

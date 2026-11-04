@@ -31,7 +31,7 @@ export default function DockerTab({ id, type }: Props) {
       image_url: values.image_url,
       deploy_type: DEPLOY_TYPE.DOCKER,
       type,
-      id,
+      project_id: id,
     };
     mutate(payload);
   }
