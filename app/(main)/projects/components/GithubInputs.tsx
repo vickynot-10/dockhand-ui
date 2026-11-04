@@ -27,8 +27,8 @@ export type GitHubFormValues = {
   root_directory: string;
   build_command: string;
   output_directory: string;
+  env_vars: { key: string; value: string }[];
 };
-
 function useRepoParts() {
   const { control } = useFormContext<GitHubFormValues>();
   const repoFullName = useWatch({ control, name: "repo_full_name" });

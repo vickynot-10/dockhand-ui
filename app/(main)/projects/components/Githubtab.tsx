@@ -7,6 +7,7 @@ import {
   RepoField,
   RootDirectoryField,
 } from "./GithubInputs";
+import { EnvVarsField } from "./EnvVars";
 import FieldRow from "./FieldRow";
 import { Input } from "@/components/ui/input";
 
@@ -20,6 +21,7 @@ export default function GitHubTab() {
       root_directory: "/",
       build_command: "",
       output_directory: "",
+      env_vars: [{ key: "", value: "" }],
     },
   });
 
@@ -50,6 +52,7 @@ export default function GitHubTab() {
             <BranchField />
             <RootDirectoryField />
             <BuildSettingsFields />
+            <EnvVarsField />
           </>
         )}
       </div>
