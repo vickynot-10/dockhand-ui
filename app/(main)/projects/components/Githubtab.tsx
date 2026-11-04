@@ -12,8 +12,10 @@ import { Input } from "@/components/ui/input";
 import { DEPLOY_TYPE } from "@/constants";
 import { AppButton } from "@/components/common/AppButton";
 import { useRouter } from "next/navigation";
+import { useSaveService } from "@/hooks/queries/useServices";
 
 import { GitHubFormValues, Props } from "@/types/services.types";
+import { useEffect } from "react";
 
 export default function GitHubTab({ id, type }: Props) {
   const methods = useForm<GitHubFormValues>({
@@ -33,12 +35,21 @@ export default function GitHubTab({ id, type }: Props) {
     control,
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = methods;
 
   const repoFullName = useWatch({ control, name: "repo_full_name" });
 
+  const { mutate, isPending } = useSaveService();
+
   const router = useRouter();
+
+  useEffect(() => {
+    register("repo_id", { required: "Repository is required" });
+    register("branch", { required: "Branch is required" });
+    register("root_directory", { required: "Root directory is required" });
+  }, [register]);
 
   function GoBack() {
     router.push(`/projects/${id}`);
@@ -51,7 +62,7 @@ export default function GitHubTab({ id, type }: Props) {
       type,
       id,
     };
-    console.log(payload);
+    mutate(payload);
   }
 
   return (
@@ -90,6 +101,7 @@ export default function GitHubTab({ id, type }: Props) {
             variant="secondary"
             type="button"
             idleLabel="Cancel"
+            isLoading={isPending}
             onClick={GoBack}
             className=" min-w-30     py-6"
           />
@@ -97,6 +109,7 @@ export default function GitHubTab({ id, type }: Props) {
           <AppButton
             idleLabel="Deploy Site"
             className=" min-w-30 py-6"
+            isLoading={isPending}
             type="submit"
             loadingLabel="Deploying..."
             successLabel="Started"

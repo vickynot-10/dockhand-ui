@@ -23,6 +23,7 @@ type DirectoryTreeProps = {
   value: string;
   onChange: (path: string) => void;
   loading?: boolean;
+  error?: string;
 };
 
 type TreeRowProps = {
@@ -179,6 +180,7 @@ export function DirectoryTree({
   value,
   onChange,
   loading,
+  error,
 }: DirectoryTreeProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -221,6 +223,7 @@ export function DirectoryTree({
         className={cn(
           buttonVariants({ variant: "outline" }),
           "w-full justify-between font-normal",
+          error && "border-destructive",
         )}
       >
         <span className="flex min-w-0 items-center gap-2">

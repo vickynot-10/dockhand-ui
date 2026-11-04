@@ -8,6 +8,7 @@ import { AppButton } from "@/components/common/AppButton";
 import { useRouter } from "next/navigation";
 
 import { DockerFormValues, Props } from "@/types/services.types";
+import { useSaveService } from "@/hooks/queries/useServices";
 
 export default function DockerTab({ id, type }: Props) {
   const {
@@ -20,6 +21,7 @@ export default function DockerTab({ id, type }: Props) {
 
   const router = useRouter();
 
+  const { mutate, isPending } = useSaveService();
   function GoBack() {
     router.push(`/projects/${id}`);
   }
@@ -31,7 +33,7 @@ export default function DockerTab({ id, type }: Props) {
       type,
       id,
     };
-    console.log(payload);
+    mutate(payload);
   }
 
   return (
@@ -62,14 +64,16 @@ export default function DockerTab({ id, type }: Props) {
             variant="secondary"
             type="button"
             idleLabel="Cancel"
+            isLoading={isPending}
             onClick={GoBack}
             className=" min-w-30     py-6"
           />
 
           <AppButton
-            type="submit"
             idleLabel="Deploy Site"
             className=" min-w-30 py-6"
+            isLoading={isPending}
+            type="submit"
             loadingLabel="Deploying..."
             successLabel="Started"
           />

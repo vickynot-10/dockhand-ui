@@ -19,6 +19,7 @@ import FieldRow from "./FieldRow";
 import { DirectoryTree } from "./DirectoryTree";
 import { Input } from "@/components/ui/input";
 import { GitHubFormValues } from "@/types/services.types";
+import { cn } from "@/lib/utils";
 
 function useRepoParts() {
   const { control } = useFormContext<GitHubFormValues>();
@@ -28,12 +29,18 @@ function useRepoParts() {
 }
 
 export function RepoField() {
-  const { setValue, control } = useFormContext<GitHubFormValues>();
+  const {
+    setValue,
+    control,
+    formState: { errors },
+  } = useFormContext<GitHubFormValues>();
   const repoId = useWatch({ control, name: "repo_id" });
 
   function handleRepoChange(id: number, selectedRepo: any) {
     if (id === repoId) return;
     setValue("repo_id", id);
+
+    setValue("repo_id", id, { shouldValidate: true });
     setValue("repo_full_name", selectedRepo.full_name);
     setValue("branch", "");
     setValue("root_directory", "/");
@@ -44,13 +51,21 @@ export function RepoField() {
       label="Repository"
       description="Select the repository you want to deploy"
     >
-      <RepoCombobox value={repoId} onChange={handleRepoChange} />
+      <RepoCombobox
+        value={repoId}
+        onChange={handleRepoChange}
+        error={errors.repo_id?.message}
+      />
     </FieldRow>
   );
 }
 
 export function BranchField() {
-  const { setValue, control } = useFormContext<GitHubFormValues>();
+  const {
+    setValue,
+    control,
+    formState: { errors },
+  } = useFormContext<GitHubFormValues>();
   const repoFullName = useWatch({ control, name: "repo_full_name" });
   const branch = useWatch({ control, name: "branch" });
   const { owner, repo } = useRepoParts();
@@ -65,7 +80,7 @@ export function BranchField() {
   }, [defaultBranch, repoFullName, setValue]);
 
   function handleBranchChange(v: string | null) {
-    setValue("branch", v ?? "");
+    setValue("branch", v ?? "", { shouldValidate: true });
     setValue("root_directory", "/");
   }
 
@@ -76,7 +91,10 @@ export function BranchField() {
         onValueChange={handleBranchChange}
         disabled={isLoading}
       >
-        <SelectTrigger className="w-full">
+        <SelectTrigger
+          className={cn("w-full", errors.branch && "border-destructive")}
+          aria-invalid={!!errors.branch}
+        >
           <SelectValue
             placeholder={isLoading ? "Loading..." : "Select branch"}
           />
@@ -95,13 +113,20 @@ export function BranchField() {
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </Select>{" "}
+      {errors.branch && (
+        <p className="mt-1 text-sm text-destructive">{errors.branch.message}</p>
+      )}
     </FieldRow>
   );
 }
 
 export function RootDirectoryField() {
-  const { setValue, control } = useFormContext<GitHubFormValues>();
+  const {
+    setValue,
+    control,
+    formState: { errors },
+  } = useFormContext<GitHubFormValues>();
   const branch = useWatch({ control, name: "branch" });
   const rootDirectory = useWatch({ control, name: "root_directory" });
   const { owner, repo } = useRepoParts();
@@ -131,13 +156,19 @@ export function RootDirectoryField() {
         value={rootDirectory}
         onChange={handleRootChange}
         loading={!branch || isLoading}
+        error={errors.root_directory?.message}
       />
     </FieldRow>
   );
 }
 
 export function BuildSettingsFields() {
-  const { register, setValue, control } = useFormContext<GitHubFormValues>();
+  const {
+    register,
+    setValue,
+    control,
+    formState: { errors },
+  } = useFormContext<GitHubFormValues>();
   const branch = useWatch({ control, name: "branch" });
   const rootDirectory = useWatch({ control, name: "root_directory" });
   const { owner, repo } = useRepoParts();
@@ -168,8 +199,17 @@ export function BuildSettingsFields() {
           placeholder={
             isLoading ? "Detecting..." : "npm install && npm run build"
           }
-          {...register("build_command")}
+          aria-invalid={!!errors.build_command}
+          {...register("build_command", {
+            required: "Build command is required",
+          })}
         />
+
+        {errors.build_command && (
+          <p className="mt-1 text-sm text-destructive">
+            {errors.build_command.message}
+          </p>
+        )}
       </FieldRow>
 
       <FieldRow
@@ -180,8 +220,16 @@ export function BuildSettingsFields() {
         <Input
           id="output_directory"
           placeholder="dist"
-          {...register("output_directory")}
+          aria-invalid={!!errors.output_directory}
+          {...register("output_directory", {
+            required: "Output directory is required",
+          })}
         />
+        {errors.output_directory && (
+          <p className="mt-1 text-sm text-destructive">
+            {errors.output_directory.message}
+          </p>
+        )}
       </FieldRow>
     </>
   );

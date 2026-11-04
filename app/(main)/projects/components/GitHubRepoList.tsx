@@ -23,6 +23,7 @@ type Props = {
   onChange: (id: number, repo: any) => void;
   disabled?: boolean;
   placeholder?: string;
+  error?: string;
 };
 
 const formatDate = (iso: string) =>
@@ -61,6 +62,7 @@ export default function RepoCombobox({
   onChange,
   disabled,
   placeholder = "Select a repository",
+  error,
 }: Props) {
   const [open, setOpen] = useState(false);
   const { data, isLoading } = useGetUserRepos();
@@ -69,60 +71,66 @@ export default function RepoCombobox({
   const selected = repos.find((r) => r.id === value);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        disabled={disabled || isLoading}
-        className={cn(
-          buttonVariants({ variant: "outline" }),
-          "h-auto w-full justify-between py-2 text-left font-normal",
-        )}
-      >
-        {selected ? (
-          <span className="flex flex-col items-start gap-0.5">
-            <span className="font-medium">{selected.full_name}</span>
-            <RepoMeta repo={selected} />
-          </span>
-        ) : (
-          <span className="text-muted-foreground">
-            {isLoading ? "Loading repositories..." : placeholder}
-          </span>
-        )}
-        <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
-      </PopoverTrigger>
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          disabled={disabled || isLoading}
+          aria-invalid={!!error}
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "h-auto w-full justify-between py-2 text-left font-normal",
+            error && "border-destructive",
+          )}
+        >
+          {selected ? (
+            <span className="flex flex-col items-start gap-0.5">
+              <span className="font-medium">{selected.full_name}</span>
+              <RepoMeta repo={selected} />
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              {isLoading ? "Loading repositories..." : placeholder}
+            </span>
+          )}
+          <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+        </PopoverTrigger>
 
-      <PopoverContent align="start" className="w-[var(--anchor-width)] p-0">
-        <Command>
-          <CommandInput placeholder="Search repositories..." />
-          <CommandList className="max-h-72">
-            <CommandEmpty>No repository found.</CommandEmpty>
-            <CommandGroup>
-              {repos.map((r) => (
-                <CommandItem
-                  key={r.id}
-                  value={r.full_name} // used only for search filtering
-                  keywords={[r.private ? "private" : "public"]}
-                  onSelect={() => {
-                    onChange(r.id, r); // store the id
-                    setOpen(false);
-                  }}
-                  className="py-2"
-                >
-                  <span className="flex flex-1 flex-col items-start gap-0.5">
-                    <span className="font-medium">{r.full_name}</span>
-                    <RepoMeta repo={r} withLink />
-                  </span>
-                  <Check
-                    className={cn(
-                      "size-4",
-                      value === r.id ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        <PopoverContent align="start" className="w-[var(--anchor-width)] p-0">
+          <Command>
+            <CommandInput placeholder="Search repositories..." />
+            <CommandList className="max-h-72">
+              <CommandEmpty>No repository found.</CommandEmpty>
+              <CommandGroup>
+                {repos.map((r) => (
+                  <CommandItem
+                    key={r.id}
+                    value={r.full_name} // used only for search filtering
+                    keywords={[r.private ? "private" : "public"]}
+                    onSelect={() => {
+                      onChange(r.id, r); // store the id
+                      setOpen(false);
+                    }}
+                    className="py-2"
+                  >
+                    <span className="flex flex-1 flex-col items-start gap-0.5">
+                      <span className="font-medium">{r.full_name}</span>
+                      <RepoMeta repo={r} withLink />
+                    </span>
+                    <Check
+                      className={cn(
+                        "size-4",
+                        value === r.id ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
+    </>
   );
 }
