@@ -43,7 +43,7 @@ export default function CreateNewService({ id, type }: Props) {
         ))}
       </div>
 
-      <div className="border-t border-border">
+      <div className="border-t border-border pb-5 ">
         <TransitionPanel activeIndex={activeIndex} direction={direction}>
           <GitHubTab />
           <DockerTab />
@@ -75,7 +75,7 @@ export function TransitionPanel({
   direction = 1,
 }: TransitionPanelProps) {
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative pt-5 pe-5", className)}>
       <AnimatePresence initial={false} mode="popLayout" custom={direction}>
         <motion.div
           key={activeIndex}

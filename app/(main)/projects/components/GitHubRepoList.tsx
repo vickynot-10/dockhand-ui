@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { useGetUserRepos } from "@/hooks/queries/useServices";
+import { useGetUserRepos } from "@/hooks/queries/useGithub";
 import {
   Popover,
   PopoverContent,
@@ -90,10 +90,7 @@ export default function RepoCombobox({
         <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
       </PopoverTrigger>
 
-      <PopoverContent
-        align="start"
-        className="w-[var(--radix-popover-trigger-width)] p-0"
-      >
+      <PopoverContent align="start" className="w-[var(--anchor-width)] p-0">
         <Command>
           <CommandInput placeholder="Search repositories..." />
           <CommandList className="max-h-72">

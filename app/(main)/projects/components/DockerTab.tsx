@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import FieldRow from "./FieldRow";
 
 type DockerFormValues = {
   image_url: string;
@@ -18,17 +18,11 @@ export default function DockerTab() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="max-w-md space-y-1">
-        <Label className="text-sm font-semibold">Docker</Label>
-        <p className="text-sm text-muted-foreground">
-          Deploy an image from a Docker registry
-        </p>
-      </div>
-
-      <div className="max-w-md space-y-2">
-        <Label htmlFor="image_url" className="text-sm font-semibold">
-          Image URL
-        </Label>
+      <FieldRow
+        label="Image URL"
+        description="Deploy an image from a Docker registry"
+        htmlFor="image_url"
+      >
         <Input
           id="image_url"
           type="text"
@@ -40,7 +34,7 @@ export default function DockerTab() {
         {errors.image_url && (
           <p className="text-sm text-destructive">{errors.image_url.message}</p>
         )}
-      </div>
+      </FieldRow>
     </div>
   );
 }
