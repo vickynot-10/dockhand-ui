@@ -6,10 +6,7 @@ import { cn } from "@/lib/utils";
 import GitHubTab from "../../../components/Githubtab";
 import DockerTab from "../../../components/DockerTab";
 
-type Props = {
-  id: string;
-  type: string;
-};
+import { Props } from "@/types/services.types";
 
 const TABS = ["GitHub", "Docker"];
 
@@ -45,8 +42,8 @@ export default function CreateNewService({ id, type }: Props) {
 
       <div className="border-t border-border pb-5 ">
         <TransitionPanel activeIndex={activeIndex} direction={direction}>
-          <GitHubTab />
-          <DockerTab />
+          <GitHubTab id={id} type={type} />
+          <DockerTab id={id} type={type} />
         </TransitionPanel>
       </div>
     </div>

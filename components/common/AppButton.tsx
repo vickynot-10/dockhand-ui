@@ -4,6 +4,9 @@ import * as React from "react";
 import { motion, AnimatePresence, type HTMLMotionProps } from "motion/react";
 import { Loader2, Check, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+
+const MotionButton = motion.create(Button);
 
 interface MultiStateSendButtonProps extends Omit<
   HTMLMotionProps<"button">,
@@ -42,8 +45,8 @@ const AppButton = React.forwardRef<
     },
     ref,
   ) => {
-    const [internalStatus, setInternalStatus] = React.useState
-      <"idle" | "loading" | "success"
+    const [internalStatus, setInternalStatus] = React.useState<
+      "idle" | "loading" | "success"
     >("idle");
 
     const status =
@@ -55,7 +58,7 @@ const AppButton = React.forwardRef<
             : "idle"
         : internalStatus;
 
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
       if (status !== "idle") return;
 
       if (isLoading === undefined) {
@@ -74,51 +77,40 @@ const AppButton = React.forwardRef<
       }
 
       if (onClick) onClick(e);
-    };
+    }
 
-    // Secondary: static button, no loading/success animation state machine
     if (variant === "secondary") {
       return (
-        <motion.button
+        <MotionButton
           ref={ref}
+          variant="secondary"
+          size="lg"
           onClick={onClick}
           disabled={disabled}
           whileHover={{ scale: disabled ? 1 : 1.02 }}
           whileTap={{ scale: disabled ? 1 : 0.97 }}
-          className={cn(
-            "group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-xl px-1 py-3 font-medium text-sm transition-all duration-300 select-none outline-none min-w-44 border",
-            "bg-[#41444e] text-white border-[#41444e] hover:bg-[#4b4e59] cursor-pointer",
-            "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            "disabled:cursor-not-allowed! disabled:opacity-60",
-            className,
-          )}
+          className={cn(" gap-2.5 overflow-hidden rounded-sm", className)}
           {...props}
         >
-          <span className="relative z-10 flex items-center gap-2 font-medium">
-            {Icon && <Icon className="size-4 text-white" />}
+          <span className="relative z-10 flex items-center gap-2">
+            {Icon && <Icon className="size-4" />}
             <span>{idleLabel}</span>
           </span>
-        </motion.button>
+        </MotionButton>
       );
     }
 
-    // Primary: full animated state machine
     return (
-      <motion.button
+      <MotionButton
         ref={ref}
+        variant="default"
+        size="lg"
         onClick={handleClick}
         disabled={disabled || status !== "idle"}
         whileHover={{ scale: status === "idle" ? 1.02 : 1 }}
         whileTap={{ scale: status === "idle" ? 0.97 : 1 }}
         className={cn(
-          "group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-xl px-1 py-3 font-medium text-sm transition-all duration-300 select-none outline-none min-w-44 border",
-          status === "idle"
-            ? "bg-[#1cbe8e] text-white border-[#1cbe8e] hover:bg-[#19aa7d] cursor-pointer"
-            : status === "success"
-              ? "bg-[#1cbe8e] text-white border-[#1cbe8e] cursor-not-allowed!"
-              : "bg-[#1cbe8e] text-white border-[#1cbe8e] cursor-not-allowed!",
-          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          "disabled:cursor-not-allowed!",
+          "group  gap-2.5 overflow-hidden rounded-sm disabled:opacity-100",
           disabled && "opacity-60",
           className,
         )}
@@ -132,11 +124,11 @@ const AppButton = React.forwardRef<
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="relative z-10 flex items-center gap-2 font-medium"
+              className="relative z-10 flex items-center gap-2"
             >
               {Icon && (
-                <Icon className="size-4 text-white transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              )}{" "}
+                <Icon className="size-4 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              )}
               <span>{idleLabel}</span>
             </motion.span>
           )}
@@ -148,7 +140,7 @@ const AppButton = React.forwardRef<
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="relative z-10 flex items-center gap-2 font-medium text-white"
+              className="relative z-10 flex items-center gap-2"
             >
               <Loader2 className="size-4 animate-spin" />
               <span>{loadingLabel}</span>
@@ -162,14 +154,14 @@ const AppButton = React.forwardRef<
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ type: "spring", stiffness: 350, damping: 22 }}
-              className="relative z-10 flex items-center gap-2 font-medium text-white"
+              className="relative z-10 flex items-center gap-2"
             >
               <Check className="size-4 stroke-[2.5]" />
               <span>{successLabel}</span>
             </motion.span>
           )}
         </AnimatePresence>
-      </motion.button>
+      </MotionButton>
     );
   },
 );

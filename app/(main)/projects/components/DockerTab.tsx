@@ -4,13 +4,12 @@ import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import FieldRow from "./FieldRow";
 import { DEPLOY_TYPE } from "@/constants";
-import { Button } from "@/components/ui/button";
+import { AppButton } from "@/components/common/AppButton";
+import { useRouter } from "next/navigation";
 
-type DockerFormValues = {
-  image_url: string;
-};
+import { DockerFormValues, Props } from "@/types/services.types";
 
-export default function DockerTab() {
+export default function DockerTab({ id, type }: Props) {
   const {
     register,
     handleSubmit,
@@ -19,10 +18,18 @@ export default function DockerTab() {
     defaultValues: { image_url: "" },
   });
 
+  const router = useRouter();
+
+  function GoBack() {
+    router.push(`/projects/${id}`);
+  }
+
   async function handleValidSubmit(values: DockerFormValues) {
     const payload = {
       image_url: values.image_url,
       deploy_type: DEPLOY_TYPE.DOCKER,
+      type,
+      id,
     };
     console.log(payload);
   }
@@ -51,10 +58,21 @@ export default function DockerTab() {
         </FieldRow>
 
         <div className="sticky bottom-0  z-10 flex items-center justify-end gap-2 bg-background py-5">
-          <Button type="button" variant="outline">
-            Cancel
-          </Button>
-          <Button type="submit">Deploy</Button>
+          <AppButton
+            variant="secondary"
+            type="button"
+            idleLabel="Cancel"
+            onClick={GoBack}
+            className=" min-w-30     py-6"
+          />
+
+          <AppButton
+            type="submit"
+            idleLabel="Deploy Site"
+            className=" min-w-30 py-6"
+            loadingLabel="Deploying..."
+            successLabel="Started"
+          />
         </div>
       </form>
     </div>

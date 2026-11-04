@@ -18,17 +18,8 @@ import RepoCombobox from "./GitHubRepoList";
 import FieldRow from "./FieldRow";
 import { DirectoryTree } from "./DirectoryTree";
 import { Input } from "@/components/ui/input";
+import { GitHubFormValues } from "@/types/services.types";
 
-export type GitHubFormValues = {
-  name: string;
-  repo_id: number | null;
-  repo_full_name: string;
-  branch: string;
-  root_directory: string;
-  build_command: string;
-  output_directory: string;
-  env_vars: { key: string; value: string }[];
-};
 function useRepoParts() {
   const { control } = useFormContext<GitHubFormValues>();
   const repoFullName = useWatch({ control, name: "repo_full_name" });

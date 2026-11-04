@@ -3,17 +3,19 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 import {
   BranchField,
   BuildSettingsFields,
-  GitHubFormValues,
   RepoField,
   RootDirectoryField,
 } from "./GithubInputs";
 import { EnvVarsField } from "./EnvVars";
 import FieldRow from "./FieldRow";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { DEPLOY_TYPE } from "@/constants";
+import { AppButton } from "@/components/common/AppButton";
+import { useRouter } from "next/navigation";
 
-export default function GitHubTab() {
+import { GitHubFormValues, Props } from "@/types/services.types";
+
+export default function GitHubTab({ id, type }: Props) {
   const methods = useForm<GitHubFormValues>({
     defaultValues: {
       name: "",
@@ -31,17 +33,23 @@ export default function GitHubTab() {
     control,
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = methods;
 
   const repoFullName = useWatch({ control, name: "repo_full_name" });
-  const branch = useWatch({ control, name: "branch" });
 
+  const router = useRouter();
+
+  function GoBack() {
+    router.push(`/projects/${id}`);
+  }
   async function handleValidSubmit(values: GitHubFormValues) {
     const payload = {
       ...values,
       env_vars: values.env_vars.filter((v) => v.key.trim()),
       deploy_type: DEPLOY_TYPE.GITHUB,
+      type,
+      id,
     };
     console.log(payload);
   }
@@ -78,15 +86,21 @@ export default function GitHubTab() {
         </div>
 
         <div className="sticky bottom-0 z-10 flex items-center justify-end gap-2 border-t border-border bg-background py-3">
-          <Button type="button" variant="outline">
-            Cancel
-          </Button>
-          <Button
+          <AppButton
+            variant="secondary"
+            type="button"
+            idleLabel="Cancel"
+            onClick={GoBack}
+            className=" min-w-30     py-6"
+          />
+
+          <AppButton
+            idleLabel="Deploy Site"
+            className=" min-w-30 py-6"
             type="submit"
-            disabled={!repoFullName || !branch || isSubmitting}
-          >
-            {isSubmitting ? "Deploying..." : "Deploy"}
-          </Button>
+            loadingLabel="Deploying..."
+            successLabel="Started"
+          />
         </div>
       </form>
     </FormProvider>
