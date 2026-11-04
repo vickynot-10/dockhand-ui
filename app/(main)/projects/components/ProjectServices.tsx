@@ -1,9 +1,26 @@
 "use client";
-
+import { DEPLOY_TYPE } from "@/constants";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { ArrowRight, FileCode2, Server } from "lucide-react";
+import {
+  GitBranch,
+  ArrowRight,
+  FileCode2,
+  Server,
+  Container,
+  MoreHorizontal,
+} from "lucide-react";
 
+import { formatRelative } from "@/lib/date";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useGetProjectServices } from "@/hooks/queries/useProjects";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +35,32 @@ import {
 type Props = {
   id: string;
 };
+
+type Service = {
+  id: string;
+  service_name: string;
+  deploy_type: number;
+  type: "static" | "web";
+  created_on: string;
+  updated_on: string;
+};
+
+function ServiceNameCell({ service }: { service: Service }) {
+  const isDocker = service.deploy_type === DEPLOY_TYPE.DOCKER;
+  const Icon = isDocker ? Container : GitBranch;
+
+  return (
+    <div className="flex items-center gap-3">
+      <Icon
+        className="size-4 shrink-0 text-muted-foreground"
+        aria-label={isDocker ? "Docker" : "GitHub"}
+      />
+      <span className="font-medium underline underline-offset-4">
+        {service.service_name}
+      </span>
+    </div>
+  );
+}
 
 const serviceTypes = [
   {
@@ -60,7 +103,6 @@ export default function ProjectServices({ id }: Props) {
   const services = project_data?.services ?? [];
 
   if (isLoading) return null;
-  console.log(services);
   return (
     <div className="space-y-6">
       <div>
@@ -115,6 +157,56 @@ export default function ProjectServices({ id }: Props) {
           ),
         )}
       </motion.div>
+
+      {services && services.length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="font-mono text-xs uppercase tracking-wider">
+                Service Name
+                <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px]">
+                  {services.length}
+                </span>
+              </TableHead>
+              <TableHead className="font-mono text-xs uppercase tracking-wider">
+                Type
+              </TableHead>
+              <TableHead className="font-mono text-xs uppercase tracking-wider">
+                Source
+              </TableHead>
+              <TableHead className="font-mono text-xs uppercase tracking-wider">
+                Updated
+              </TableHead>
+              <TableHead className="w-10" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(services as Service[]).map((service) => (
+              <TableRow key={service.id} className="h-14">
+                <TableCell>
+                  <Link href={`/projects/${id}/services/${service.id}`}>
+                    <ServiceNameCell service={service} />
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className="capitalize">
+                    {service.type}
+                  </Badge>
+                </TableCell>
+
+                <TableCell className="text-muted-foreground">
+                  {formatRelative(service.updated_on)}
+                </TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="icon" className="size-8">
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }

@@ -13,12 +13,10 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useSignout } from "@/hooks/queries/useAuth";
 
 export default function AppHeader() {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-  const { mutate: signOut, isPending } = useSignout();
   const [searchQuery, setSearchQuery] = useState("");
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
@@ -30,14 +28,6 @@ export default function AppHeader() {
 
   function handleThemeToggle() {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  }
-
-  function handleViewProfile() {
-    router.push("/profile");
-  }
-
-  function handleSignOut() {
-    signOut();
   }
 
   return (
