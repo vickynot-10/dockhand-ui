@@ -11,6 +11,7 @@ export type GitHubFormValues = {
 
 export type DockerFormValues = {
   image_url: string;
+  name: string;
 };
 
 export type Props = {

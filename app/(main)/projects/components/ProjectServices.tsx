@@ -60,7 +60,7 @@ export default function ProjectServices({ id }: Props) {
   const services = project_data?.services ?? [];
 
   if (isLoading) return null;
-
+  console.log(services);
   return (
     <div className="space-y-6">
       <div>

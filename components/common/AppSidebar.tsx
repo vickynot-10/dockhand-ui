@@ -3,6 +3,7 @@
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
@@ -10,15 +11,11 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import * as React from "react";
 import {
-  Boxes,
   ChevronRight,
-  Flag,
-  FlaskConical,
-  LayoutDashboard,
   LucideIcon,
   Workflow,
-  History,
-  KeyRoundIcon,
+  LogOut,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -35,6 +32,8 @@ import {
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
+import { Button } from "../ui/button";
+import { useSignout } from "@/hooks/queries/useAuth";
 
 export type NavItem = {
   label?: string;
@@ -48,21 +47,14 @@ export type NavItem = {
 export const navData: NavItem[] = [
   { label: "Overview", isSection: true },
   { title: "Projects", icon: Workflow, href: "/" },
-
-  { label: "Manage", isSection: true },
-  { title: "Apps", icon: Boxes, href: "/apps" },
-  { title: "Keys", icon: KeyRoundIcon, href: "/keys" },
-  { title: "Flags", icon: Flag, href: "/flags" },
-
-  { label: "Tools", isSection: true },
-  { title: "Playground", icon: FlaskConical, href: "/playground" },
-  { title: "Audit Log", icon: History, href: "/audit" },
 ];
 
 export function AppSidebar() {
+  const { mutate, isPending } = useSignout();
+
   return (
     <Sidebar className="px-0 h-full [&_[data-slot=sidebar-inner]]:h-full">
-      <div className="flex flex-col gap-6">
+      <div className="flex h-full flex-col gap-6">
         <SidebarHeader className="px-4">
           <SidebarMenu>
             <SidebarMenuItem>
@@ -97,13 +89,29 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent className="overflow-hidden">
-          <ScrollArea className="h-[calc(100vh-100px)]">
+        <SidebarContent className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full">
             <div className="px-4">
               <NavMain items={navData} />
             </div>
           </ScrollArea>
         </SidebarContent>
+
+        <SidebarFooter className="px-4 pb-4">
+          <Button
+            variant="destructive"
+            className="w-full justify-start gap-2"
+            onClick={() => mutate()}
+            disabled={isPending}
+          >
+            {isPending ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <LogOut size={16} />
+            )}
+            {isPending ? "Signing out..." : "Sign Out"}
+          </Button>
+        </SidebarFooter>
       </div>
     </Sidebar>
   );

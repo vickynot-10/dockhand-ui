@@ -62,7 +62,13 @@ export default function GitHubTab({ id, type }: Props) {
       type,
       project_id: id,
     };
-    mutate(payload);
+    mutate(payload, {
+      onSuccess: (res) => {
+        if (res?.success) {
+          GoBack();
+        }
+      },
+    });
   }
 
   return (

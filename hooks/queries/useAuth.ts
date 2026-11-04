@@ -93,7 +93,7 @@ export function useSignout() {
 
   return useMutation({
     mutationFn: async () => {
-      const res = await api.post("/sign-out");
+      const res = await api.post("/auth/sign-out");
       return res.data;
     },
     onSuccess: (data) => {
