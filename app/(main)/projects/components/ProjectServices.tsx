@@ -184,7 +184,7 @@ export default function ProjectServices({ id }: Props) {
             {(services as Service[]).map((service) => (
               <TableRow key={service.id} className="h-14">
                 <TableCell>
-                  <Link href={`/projects/${id}/services/${service.id}`}>
+                  <Link href={`/projects/${id}/edit/${service.id}`}>
                     <ServiceNameCell service={service} />
                   </Link>
                 </TableCell>
