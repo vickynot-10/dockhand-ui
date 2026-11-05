@@ -245,28 +245,45 @@ export default function ProjectServices({ id }: Props) {
         <div className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              {FILTERS.map(({ key, label, icon: Icon }) => {
-                const active = activeFilters.includes(key);
-                return (
-                  <motion.button
-                    key={key}
-                    type="button"
-                    layout
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => toggleFilter(key)}
-                    aria-pressed={active}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                      active
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {Icon && <Icon className="size-3.5" />}
-                    {label}
-                  </motion.button>
-                );
-              })}
+              <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1">
+                {FILTERS.map(({ key, label, icon: Icon }) => {
+                  const active = activeFilters.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleFilter(key)}
+                      aria-pressed={active}
+                      className={cn(
+                        "relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                        active
+                          ? "text-foreground"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <AnimatePresence initial={false}>
+                        {active && (
+                          <motion.span
+                            key="pill"
+                            className="absolute inset-0 rounded-full bg-background shadow-sm"
+                            initial={{ opacity: 0, scale: 0.85 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.85 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 30,
+                            }}
+                          />
+                        )}
+                      </AnimatePresence>
+                      {Icon && <Icon className="relative size-4" />}
+                      <span className="relative">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               {activeFilters.length > 0 && (
                 <Button
                   variant="ghost"

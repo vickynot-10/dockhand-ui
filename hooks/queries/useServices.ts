@@ -19,3 +19,17 @@ export function useSaveService() {
     },
   });
 }
+
+export function useDeleteServices() {
+  return useMutation({
+    mutationFn: async (data: GitHubFormValues | DockerFormValues) => {
+      const res = await api.post("/services", data);
+      return res.data ?? null;
+    },
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success(res.msg || "Service Saved successfully!");
+      }
+    },
+  });
+}
