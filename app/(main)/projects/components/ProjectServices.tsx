@@ -41,7 +41,6 @@ type Service = {
   service_name: string;
   deploy_type: number;
   type: "static" | "web";
-  created_on: string;
   updated_on: string;
 };
 
@@ -164,16 +163,11 @@ export default function ProjectServices({ id }: Props) {
             <TableRow className="hover:bg-transparent">
               <TableHead className="font-mono text-xs uppercase tracking-wider">
                 Service Name
-                <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px]">
-                  {services.length}
-                </span>
               </TableHead>
               <TableHead className="font-mono text-xs uppercase tracking-wider">
                 Type
               </TableHead>
-              <TableHead className="font-mono text-xs uppercase tracking-wider">
-                Source
-              </TableHead>
+
               <TableHead className="font-mono text-xs uppercase tracking-wider">
                 Updated
               </TableHead>
