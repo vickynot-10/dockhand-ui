@@ -106,7 +106,7 @@ const AppButton = React.forwardRef<
         variant="default"
         size="lg"
         onClick={handleClick}
-        disabled={disabled || status !== "idle"}
+        disabled={isLoading || disabled || status !== "idle"}
         whileHover={{ scale: status === "idle" ? 1.02 : 1 }}
         whileTap={{ scale: status === "idle" ? 0.97 : 1 }}
         className={cn(

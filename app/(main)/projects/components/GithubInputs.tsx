@@ -39,7 +39,7 @@ export function RepoField() {
   function handleRepoChange(id: number, selectedRepo: any) {
     if (id === repoId) return;
     setValue("repo_id", id);
-
+    setValue("name", selectedRepo?.name ?? "");
     setValue("repo_id", id, { shouldValidate: true });
     setValue("repo_full_name", selectedRepo.full_name);
     setValue("branch", "");
