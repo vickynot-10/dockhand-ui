@@ -1,17 +1,22 @@
 "use client";
 import { DEPLOY_TYPE } from "@/constants";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   GitBranch,
   ArrowRight,
   FileCode2,
   Server,
   Container,
-  MoreHorizontal,
+  Search,
+  Trash2,
+  PauseCircle,
+  X,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { formatRelative } from "@/lib/date";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -23,6 +28,8 @@ import {
 } from "@/components/ui/table";
 import { useGetProjectServices } from "@/hooks/queries/useProjects";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox"; // npx shadcn add checkbox
+import { Input } from "@/components/ui/input"; // npx shadcn add input
 import {
   Card,
   CardContent,
@@ -31,6 +38,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import AppIconButton from "@/components/common/AppIconButton";
 
 type Props = {
   id: string;
@@ -42,6 +50,32 @@ type Service = {
   deploy_type: number;
   type: "static" | "web";
   updated_on: string;
+  suspend: boolean;
+};
+
+type FilterKey = "github" | "docker" | "static" | "web" | "suspended";
+
+const FILTERS: { key: FilterKey; label: string; icon?: typeof GitBranch }[] = [
+  { key: "github", label: "GitHub", icon: GitBranch },
+  { key: "docker", label: "Docker", icon: Container },
+  { key: "static", label: "Static", icon: FileCode2 },
+  { key: "web", label: "Web", icon: Server },
+  { key: "suspended", label: "Suspended", icon: PauseCircle },
+];
+
+const matchesFilter = (s: Service, key: FilterKey) => {
+  switch (key) {
+    case "github":
+      return s.deploy_type !== DEPLOY_TYPE.DOCKER;
+    case "docker":
+      return s.deploy_type === DEPLOY_TYPE.DOCKER;
+    case "static":
+      return s.type === "static";
+    case "web":
+      return s.type === "web";
+    case "suspended":
+      return s.suspend;
+  }
 };
 
 function ServiceNameCell({ service }: { service: Service }) {
@@ -57,6 +91,11 @@ function ServiceNameCell({ service }: { service: Service }) {
       <span className="font-medium underline underline-offset-4">
         {service.service_name}
       </span>
+      {service.suspend && (
+        <Badge variant="outline" className="text-amber-600">
+          Suspended
+        </Badge>
+      )}
     </div>
   );
 }
@@ -99,7 +138,52 @@ const item = {
 export default function ProjectServices({ id }: Props) {
   const { data, isLoading } = useGetProjectServices(id);
   const project_data = data?.data ?? null;
-  const services = project_data?.services ?? [];
+  const services = (project_data?.services ?? []) as Service[];
+
+  const [selected, setSelected] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [activeFilters, setActiveFilters] = useState<FilterKey[]>([]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return services.filter((s) => {
+      if (q && !s.service_name.toLowerCase().includes(q)) return false;
+      // deploy-type chips (github/docker) are OR'd, type chips (static/web) are
+      // OR'd, suspended is its own toggle; groups are AND'd together.
+      const groups: FilterKey[][] = [
+        ["github", "docker"],
+        ["static", "web"],
+        ["suspended"],
+      ];
+      return groups.every((group) => {
+        const on = group.filter((k) => activeFilters.includes(k));
+        return on.length === 0 || on.some((k) => matchesFilter(s, k));
+      });
+    });
+  }, [services, search, activeFilters]);
+
+  const filteredIds = filtered.map((s) => s.id);
+  const selectedVisible = selected.filter((sid) => filteredIds.includes(sid));
+  const allChecked =
+    filtered.length > 0 && selectedVisible.length === filtered.length;
+  const someChecked = selectedVisible.length > 0 && !allChecked;
+
+  const toggleAll = () =>
+    setSelected((prev) =>
+      allChecked
+        ? prev.filter((sid) => !filteredIds.includes(sid))
+        : Array.from(new Set([...prev, ...filteredIds])),
+    );
+
+  const toggleOne = (sid: string) =>
+    setSelected((prev) =>
+      prev.includes(sid) ? prev.filter((x) => x !== sid) : [...prev, sid],
+    );
+
+  const toggleFilter = (key: FilterKey) =>
+    setActiveFilters((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
 
   if (isLoading) return null;
   return (
@@ -144,10 +228,10 @@ export default function ProjectServices({ id }: Props) {
                   <Button variant="link" className="h-auto gap-1 p-0">
                     <Link
                       href={href(id)}
-                      className=" flex flex-row gap-2 items-center"
+                      className="flex flex-row items-center gap-2"
                     >
                       {cta}
-                      <ArrowRight className=" transition-transform group-hover:translate-x-1" />
+                      <ArrowRight className="transition-transform group-hover:translate-x-1" />
                     </Link>
                   </Button>
                 </CardFooter>
@@ -157,49 +241,185 @@ export default function ProjectServices({ id }: Props) {
         )}
       </motion.div>
 
-      {services && services.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="font-mono text-xs uppercase tracking-wider">
-                Service Name
-              </TableHead>
-              <TableHead className="font-mono text-xs uppercase tracking-wider">
-                Type
-              </TableHead>
+      {services.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              {FILTERS.map(({ key, label, icon: Icon }) => {
+                const active = activeFilters.includes(key);
+                return (
+                  <motion.button
+                    key={key}
+                    type="button"
+                    layout
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => toggleFilter(key)}
+                    aria-pressed={active}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {Icon && <Icon className="size-3.5" />}
+                    {label}
+                  </motion.button>
+                );
+              })}
+              {activeFilters.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 px-2 text-xs"
+                  onClick={() => setActiveFilters([])}
+                >
+                  <X className="size-3" />
+                  Clear
+                </Button>
+              )}
+            </div>
+            <AnimatePresence initial={false}>
+              {selectedVisible.length > 0 && (
+                <motion.div
+                  key="bulk"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/50 px-4 py-2">
+                    <span className="text-sm">
+                      {selectedVisible.length} selected
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="gap-1.5">
+                        <PauseCircle className="size-4" />
+                        Suspend
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="gap-1.5"
+                      >
+                        <Trash2 className="size-4" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-              <TableHead className="font-mono text-xs uppercase tracking-wider">
-                Updated
-              </TableHead>
-              <TableHead className="w-10" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(services as Service[]).map((service) => (
-              <TableRow key={service.id} className="h-14">
-                <TableCell>
-                  <Link href={`/projects/${id}/edit/${service.id}`}>
-                    <ServiceNameCell service={service} />
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="capitalize">
-                    {service.type}
-                  </Badge>
-                </TableCell>
+          <div className="relative w-full ">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search services"
+              className="pl-8"
+            />
+          </div>
 
-                <TableCell className="text-muted-foreground">
-                  {formatRelative(service.updated_on)}
-                </TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon" className="size-8">
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </TableCell>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allChecked}
+                    indeterminate={someChecked}
+                    onCheckedChange={toggleAll}
+                    aria-label={allChecked ? "Deselect all" : "Select all"}
+                  />
+                </TableHead>
+                <TableHead className="font-mono text-xs uppercase tracking-wider">
+                  Service Name
+                </TableHead>
+                <TableHead className="font-mono text-xs uppercase tracking-wider">
+                  Type
+                </TableHead>
+                <TableHead className="font-mono text-xs uppercase tracking-wider">
+                  Updated
+                </TableHead>
+                <TableHead className="w-48" />
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              <AnimatePresence initial={false}>
+                {filtered.map((service) => {
+                  const isSelected = selected.includes(service.id);
+                  return (
+                    <motion.tr
+                      key={service.id}
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      data-state={isSelected ? "selected" : undefined}
+                      className={cn(
+                        "h-14 border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+                        service.suspend && "opacity-70",
+                      )}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleOne(service.id)}
+                          aria-label={`Select ${service.service_name}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Link href={`/projects/${id}/edit/${service.id}`}>
+                          <ServiceNameCell service={service} />
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize">
+                          {service.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatRelative(service.updated_on)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-2">
+                          <AppIconButton
+                            icon={
+                              <PauseCircle className="size-4 text-destructive" />
+                            }
+                            type="button"
+                            tooltip="Suspend"
+                          />
+
+                          <AppIconButton
+                            icon={
+                              <Trash2 className="size-4 text-destructive" />
+                            }
+                            type="button"
+                            tooltip="Delete"
+                          />
+                        </div>
+                      </TableCell>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
+
+              {filtered.length === 0 && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell
+                    colSpan={5}
+                    className="h-24 text-center text-sm text-muted-foreground"
+                  >
+                    No services match your search or filters.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   );
