@@ -1,23 +1,31 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import FieldRow from "./FieldRow";
 import { DEPLOY_TYPE } from "@/constants";
 import { AppButton } from "@/components/common/AppButton";
 import { useRouter } from "next/navigation";
 
+import { generateSlug, validateSlug } from "@/lib/genertateSlug";
 import { DockerFormValues, Props } from "@/types/services.types";
 import { useSaveService } from "@/hooks/queries/useServices";
+import { useEffect } from "react";
 
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost";
 export default function DockerTab({ id, type }: Props) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    setValue,
+    formState: { errors, dirtyFields },
+    control,
   } = useForm<DockerFormValues>({
-    defaultValues: { image_url: "", name: "" },
+    defaultValues: { image_url: "", name: "", slug: "" },
   });
+
+  const projectName = useWatch({ control, name: "name" });
+  const projectSlug = useWatch({ control, name: "slug" });
 
   const router = useRouter();
 
@@ -26,12 +34,18 @@ export default function DockerTab({ id, type }: Props) {
     router.push(`/projects/${id}`);
   }
 
+  useEffect(() => {
+    if (dirtyFields.slug) return;
+    setValue("slug", generateSlug(projectName ?? ""));
+  }, [projectName, dirtyFields.slug, setValue]);
+
   async function handleValidSubmit(values: DockerFormValues) {
     const payload = {
       name: values.name,
       image_url: values.image_url,
       deploy_type: DEPLOY_TYPE.DOCKER,
       type,
+      slug: "",
       project_id: id,
     };
     mutate(payload, {
@@ -59,6 +73,29 @@ export default function DockerTab({ id, type }: Props) {
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
+          </FieldRow>
+
+          <FieldRow
+            label="Sub Domain"
+            description="Your site will be available at this address"
+            htmlFor="slug"
+          >
+            <Input
+              id="slug"
+              placeholder="my-app"
+              {...register("slug", {
+                required: "Sub Domain is required",
+                validate: (value) => validateSlug(value) ?? true,
+              })}
+            />
+            {projectSlug && (
+              <p className="text-sm text-muted-foreground">
+                {projectSlug}.{BASE_DOMAIN}
+              </p>
+            )}
+            {errors.slug && (
+              <p className="text-sm text-destructive">{errors.slug.message}</p>
             )}
           </FieldRow>
 

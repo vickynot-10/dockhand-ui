@@ -1,5 +1,12 @@
-export type GitHubFormValues = {
+interface CommonFields {
   name: string;
+  slug: string;
+  deploy_type: number;
+  type: string;
+  project_id: string;
+}
+
+export interface GitHubFormValues extends CommonFields {
   repo_id: number | null;
   repo_full_name: string;
   branch: string;
@@ -7,12 +14,11 @@ export type GitHubFormValues = {
   build_command: string;
   output_directory: string;
   env_vars: { key: string; value: string }[];
-};
+}
 
-export type DockerFormValues = {
+export interface DockerFormValues extends CommonFields {
   image_url: string;
-  name: string;
-};
+}
 
 export type Props = {
   id: string;

@@ -13,14 +13,17 @@ import { DEPLOY_TYPE } from "@/constants";
 import { AppButton } from "@/components/common/AppButton";
 import { useRouter } from "next/navigation";
 import { useSaveService } from "@/hooks/queries/useServices";
-
+import { generateSlug, validateSlug } from "@/lib/genertateSlug";
 import { GitHubFormValues, Props } from "@/types/services.types";
 import { useEffect } from "react";
+
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost";
 
 export default function GitHubTab({ id, type }: Props) {
   const methods = useForm<GitHubFormValues>({
     defaultValues: {
       name: "",
+      slug: "",
       repo_id: null,
       repo_full_name: "",
       branch: "",
@@ -35,11 +38,13 @@ export default function GitHubTab({ id, type }: Props) {
     control,
     register,
     handleSubmit,
-
-    formState: { errors },
+    setValue,
+    formState: { errors, dirtyFields },
   } = methods;
 
   const repoFullName = useWatch({ control, name: "repo_full_name" });
+  const projectName = useWatch({ control, name: "name" });
+  const projectSlug = useWatch({ control, name: "slug" });
 
   const { mutate, isPending } = useSaveService();
 
@@ -51,9 +56,15 @@ export default function GitHubTab({ id, type }: Props) {
     register("root_directory", { required: "Root directory is required" });
   }, [register]);
 
+  useEffect(() => {
+    if (dirtyFields.slug) return;
+    setValue("slug", generateSlug(projectName ?? ""));
+  }, [projectName, dirtyFields.slug, setValue]);
+
   function GoBack() {
     router.push(`/projects/${id}`);
   }
+
   async function handleValidSubmit(values: GitHubFormValues) {
     const payload = {
       ...values,
@@ -89,6 +100,29 @@ export default function GitHubTab({ id, type }: Props) {
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
+          </FieldRow>
+
+          <FieldRow
+            label="Sub Domain"
+            description="Your site will be available at this address"
+            htmlFor="slug"
+          >
+            <Input
+              id="slug"
+              placeholder="my-app"
+              {...register("slug", {
+                required: "Sub Domain is required",
+                validate: (value) => validateSlug(value) ?? true,
+              })}
+            />
+            {projectSlug && (
+              <p className="text-sm text-muted-foreground">
+                {projectSlug}.{BASE_DOMAIN}
+              </p>
+            )}
+            {errors.slug && (
+              <p className="text-sm text-destructive">{errors.slug.message}</p>
             )}
           </FieldRow>
 
