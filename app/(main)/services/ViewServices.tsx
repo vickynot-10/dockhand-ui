@@ -10,8 +10,10 @@ import {
   GitCommitHorizontal,
   PauseCircle,
   PlayCircle,
+  Terminal,
   Rocket,
   Trash2,
+  Plug,
 } from "lucide-react";
 import { DEPLOYMENT_STATUS, DEPLOY_TRIGGER, DEPLOY_TYPE } from "@/constants";
 import {
@@ -35,6 +37,7 @@ import { ServiceActionType } from "../projects/components/ServicesDialog";
 import ServicesSuspendDeleteDialog from "../projects/components/ServicesDialog";
 
 import AppIcon from "@/components/common/AppIcons";
+import AppIconButton from "@/components/common/AppIconButton";
 type Props = {
   id: string;
   type: string;
@@ -48,6 +51,7 @@ type ServiceData = {
   enabled: boolean;
   project_id: string;
   deploy_type: number;
+  port: number;
   image_url: string | null;
   repo_full_name: string | null;
   branch: string | null;
@@ -69,6 +73,7 @@ type Deployment = {
 type TableProps = {
   deployments: Deployment[];
   enabled: boolean;
+  type: string;
 };
 
 const EMPTY: Deployment[] = [];
@@ -122,6 +127,24 @@ function shortImage(tag: string | null) {
   if (!tag) return "-";
   const [name, digest] = tag.split("@");
   return digest ? `${name}@${digest.slice(7, 19)}` : tag;
+}
+
+function LogsCell({
+  deployment_id,
+  type,
+}: {
+  deployment_id: string;
+  type: string;
+}) {
+  return (
+    <TableCell className="w-10">
+      <AppIconButton
+        icon={<Terminal className="size-4" />}
+        tooltip="View logs"
+        href={`/services/${type}/${deployment_id}/logs`}
+      />
+    </TableCell>
+  );
 }
 
 function HeadCell({ children }: { children: React.ReactNode }) {
@@ -191,7 +214,7 @@ function EmptyRow() {
   );
 }
 
-function DockerDeployTable({ deployments, enabled }: TableProps) {
+function DockerDeployTable({ deployments, enabled, type }: TableProps) {
   return (
     <Table>
       <TableHeader>
@@ -202,6 +225,7 @@ function DockerDeployTable({ deployments, enabled }: TableProps) {
           <HeadCell>Trigger</HeadCell>
           <HeadCell>Started</HeadCell>
           <HeadCell>Duration</HeadCell>
+          <HeadCell>{null}</HeadCell>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -225,6 +249,7 @@ function DockerDeployTable({ deployments, enabled }: TableProps) {
             </TableCell>
             <TriggerCell trigger={deployment.trigger} />
             <TimeCells deployment={deployment} />
+            <LogsCell deployment_id={deployment.id} type={type} />
           </TableRow>
         ))}
         {deployments.length === 0 && <EmptyRow />}
@@ -233,7 +258,7 @@ function DockerDeployTable({ deployments, enabled }: TableProps) {
   );
 }
 
-function GithubDeployTable({ deployments, enabled }: TableProps) {
+function GithubDeployTable({ deployments, enabled, type }: TableProps) {
   return (
     <Table>
       <TableHeader>
@@ -244,6 +269,7 @@ function GithubDeployTable({ deployments, enabled }: TableProps) {
           <HeadCell>Trigger</HeadCell>
           <HeadCell>Started</HeadCell>
           <HeadCell>Duration</HeadCell>
+          <HeadCell>{null}</HeadCell>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -267,6 +293,7 @@ function GithubDeployTable({ deployments, enabled }: TableProps) {
             </TableCell>
             <TriggerCell trigger={deployment.trigger} />
             <TimeCells deployment={deployment} />
+            <LogsCell deployment_id={deployment.id} type={type} />
           </TableRow>
         ))}
         {deployments.length === 0 && <EmptyRow />}
@@ -275,15 +302,7 @@ function GithubDeployTable({ deployments, enabled }: TableProps) {
   );
 }
 
-function ServiceHeader({
-  service,
-  isLive,
-  commitSha,
-}: {
-  service: ServiceData;
-  isLive: boolean;
-  commitSha: string | null;
-}) {
+export function ServiceHeader({ service }: { service: ServiceData }) {
   const [copied, setCopied] = useState(false);
   const isDocker = service.deploy_type === DEPLOY_TYPE.DOCKER;
 
@@ -297,68 +316,73 @@ function ServiceHeader({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-        <div className="flex items-center gap-2">
-          <AppIcon type={isDocker ? "docker" : "github"} />
-
-          <span className="font-medium">
-            {isDocker ? service.image_url : service.repo_full_name}
-          </span>
-        </div>
-
-        {!isDocker && service.branch && (
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <GitBranch className="size-4" />
-            <span>{service.branch}</span>
-          </div>
-        )}
-
-        {!isDocker && commitSha && (
-          <div className="flex items-center gap-1.5 font-mono text-muted-foreground">
-            <GitCommitHorizontal className="size-4" />
-            <span>{commitSha.slice(0, 7)}</span>
-          </div>
-        )}
-
-        {isLive && (
-          <Badge className="gap-1 bg-green-600/15 text-green-600 hover:bg-green-600/15">
-            <Check className="size-3" /> Live
+    <>
+      <div className="flex items-center gap-3">
+        <h2 className="text-xl font-semibold">{service.name}</h2>
+        <Badge variant="secondary" className="capitalize">
+          {service.type}
+        </Badge>
+        {!service.enabled && (
+          <Badge variant="outline" className="text-amber-600">
+            Suspended
           </Badge>
         )}
       </div>
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <AppIcon type={isDocker ? "docker" : "github"} />
 
-      {url && (
-        <div className="flex items-center gap-1">
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            className={cn(
-              "inline-flex items-center gap-1 text-sm text-primary underline-offset-4 hover:underline",
-              !service.enabled && "pointer-events-none opacity-50",
-            )}
-          >
-            {url}
-            <ExternalLink className="size-3" />
-          </a>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={copyUrl}
-            aria-label="Copy URL"
-          >
-            {copied ? (
-              <Check className="size-4 text-green-600" />
-            ) : (
-              <Copy className="size-4" />
-            )}
-          </Button>
+            <span className="font-medium">
+              {isDocker ? service.image_url : service.repo_full_name}
+            </span>
+          </div>
+          {!isDocker && service.branch && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <GitBranch className="size-4" />
+              <span>{service.branch}</span>
+            </div>
+          )}
+          {service.port && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Plug className="size-4" />
+              <span className="font-mono">:{service.port}</span>
+            </div>
+          )}{" "}
         </div>
-      )}
-    </div>
+
+        {url && (
+          <div className="flex items-center gap-1">
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className={cn(
+                "inline-flex items-center gap-1 text-sm text-primary underline-offset-4 hover:underline",
+                !service.enabled && "pointer-events-none opacity-50",
+              )}
+            >
+              {url}
+              <ExternalLink className="size-3" />
+            </a>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              onClick={copyUrl}
+              aria-label="Copy URL"
+            >
+              {copied ? (
+                <Check className="size-4 text-green-600" />
+              ) : (
+                <Copy className="size-4" />
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -380,18 +404,12 @@ export default function ViewService({ id, type }: Props) {
     return <p className="text-sm text-muted-foreground">Service not found.</p>;
   }
 
-  const sorted = [...deployments].sort(
-    (a, b) =>
-      new Date(b.created_on).getTime() - new Date(a.created_on).getTime(),
-  );
   const hasInFlight = deployments.some(
     (d) =>
       d.status === DEPLOYMENT_STATUS.QUEUED ||
       d.status === DEPLOYMENT_STATUS.BUILDING,
   );
-  const liveDeployment = service.enabled
-    ? sorted.find((d) => d.status === DEPLOYMENT_STATUS.RUNNING)
-    : undefined;
+
   const isDocker = service.deploy_type === DEPLOY_TYPE.DOCKER;
 
   function handleResume() {
@@ -411,24 +429,7 @@ export default function ViewService({ id, type }: Props) {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold">{service.name}</h2>
-              <Badge variant="secondary" className="capitalize">
-                {service.type ?? type}
-              </Badge>
-              {!service.enabled && (
-                <Badge variant="outline" className="text-amber-600">
-                  Suspended
-                </Badge>
-              )}
-            </div>
-            <ServiceHeader
-              service={service}
-              isLive={!!liveDeployment}
-              commitSha={
-                liveDeployment?.commit_sha ?? sorted[0]?.commit_sha ?? null
-              }
-            />
+            <ServiceHeader service={service} />
           </div>
 
           <div className="flex items-center gap-2">
@@ -474,9 +475,17 @@ export default function ViewService({ id, type }: Props) {
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">Deploys</h3>
           {isDocker ? (
-            <DockerDeployTable deployments={sorted} enabled={service.enabled} />
+            <DockerDeployTable
+              deployments={deployments}
+              enabled={service.enabled}
+              type={type}
+            />
           ) : (
-            <GithubDeployTable deployments={sorted} enabled={service.enabled} />
+            <GithubDeployTable
+              deployments={deployments}
+              enabled={service.enabled}
+              type={type}
+            />
           )}
         </div>
       </div>
