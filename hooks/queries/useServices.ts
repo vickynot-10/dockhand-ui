@@ -20,15 +20,24 @@ export function useSaveService() {
   });
 }
 
-export function useDeleteServices() {
+export type ServicesBulkAction = "suspend" | "delete" | "resume";
+
+export function useServicesBulkAction() {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: async (data: GitHubFormValues | DockerFormValues) => {
-      const res = await api.post("/services", data);
+    mutationFn: async (data: { ids: string[]; action: ServicesBulkAction }) => {
+      const res = await api.post("/services/actions", data);
       return res.data ?? null;
     },
-    onSuccess: (res: any) => {
+    onSuccess: (res: any, vars) => {
       if (res?.success) {
-        toast.success(res.msg || "Service Saved successfully!");
+        const fallback =
+          vars.action === "delete"
+            ? "Services deleted successfully!"
+            : "Services suspended successfully!";
+        toast.success(res.msg || fallback);
+        queryClient.invalidateQueries({ queryKey: ["projects-services"] });
       }
     },
   });

@@ -28,8 +28,8 @@ import {
 } from "@/components/ui/table";
 import { useGetProjectServices } from "@/hooks/queries/useProjects";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox"; // npx shadcn add checkbox
-import { Input } from "@/components/ui/input"; // npx shadcn add input
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -39,6 +39,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import AppIconButton from "@/components/common/AppIconButton";
+import ServicesSuspendDeleteDialog from "./ServicesDialog";
 
 type Props = {
   id: string;
@@ -140,6 +141,11 @@ export default function ProjectServices({ id }: Props) {
   const project_data = data?.data ?? null;
   const services = (project_data?.services ?? []) as Service[];
 
+  const [dialog, setDialog] = useState<{
+    type: "suspend" | "delete";
+    ids: string[];
+  } | null>(null);
+
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<FilterKey[]>([]);
@@ -148,8 +154,6 @@ export default function ProjectServices({ id }: Props) {
     const q = search.trim().toLowerCase();
     return services.filter((s) => {
       if (q && !s.service_name.toLowerCase().includes(q)) return false;
-      // deploy-type chips (github/docker) are OR'd, type chips (static/web) are
-      // OR'd, suspended is its own toggle; groups are AND'd together.
       const groups: FilterKey[][] = [
         ["github", "docker"],
         ["static", "web"],
@@ -187,257 +191,282 @@ export default function ProjectServices({ id }: Props) {
 
   if (isLoading) return null;
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">Services</h2>
-        <p className="text-sm text-muted-foreground">
-          {services.length === 0
-            ? "No services yet. Create one to get started."
-            : `${services.length} service${services.length > 1 ? "s" : ""}`}
-        </p>
+    <>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl font-semibold">Services</h2>
+          <p className="text-sm text-muted-foreground">
+            {services.length === 0
+              ? "No services yet. Create one to get started."
+              : `${services.length} service${services.length > 1 ? "s" : ""}`}
+          </p>
+        </div>
+
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid gap-4 sm:grid-cols-2"
+        >
+          {serviceTypes.map(
+            ({ key, title, description, cta, icon: Icon, href }) => (
+              <motion.div
+                key={key}
+                variants={item}
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Card className="group h-full transition-colors hover:border-primary/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Icon className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                      {title}
+                    </CardTitle>
+                    <CardDescription className="text-sm leading-relaxed">
+                      {description}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent />
+
+                  <CardFooter>
+                    <Button variant="link" className="h-auto gap-1 p-0">
+                      <Link
+                        href={href(id)}
+                        className="flex flex-row items-center gap-2"
+                      >
+                        {cta}
+                        <ArrowRight className="transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </motion.div>
+            ),
+          )}
+        </motion.div>
+
+        {services.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1">
+                  {FILTERS.map(({ key, label, icon: Icon }) => {
+                    const active = activeFilters.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleFilter(key)}
+                        aria-pressed={active}
+                        className={cn(
+                          "relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                          active
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        <AnimatePresence initial={false}>
+                          {active && (
+                            <motion.span
+                              key="pill"
+                              className="absolute inset-0 rounded-full bg-background shadow-sm"
+                              initial={{ opacity: 0, scale: 0.85 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.85 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 30,
+                              }}
+                            />
+                          )}
+                        </AnimatePresence>
+                        {Icon && <Icon className="relative size-4" />}
+                        <span className="relative">{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {activeFilters.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 px-2 text-xs"
+                    onClick={() => setActiveFilters([])}
+                  >
+                    <X className="size-3" />
+                    Clear
+                  </Button>
+                )}
+              </div>
+              <AnimatePresence initial={false}>
+                {selectedVisible.length > 0 && (
+                  <motion.div
+                    key="bulk"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/50 px-4 py-2">
+                      <span className="text-sm">
+                        {selectedVisible.length} selected
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() =>
+                            setDialog({ type: "suspend", ids: selectedVisible })
+                          }
+                        >
+                          <PauseCircle className="size-4" /> Suspend
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() =>
+                            setDialog({ type: "delete", ids: selectedVisible })
+                          }
+                        >
+                          <Trash2 className="size-4" /> Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="relative w-full ">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search services"
+                className="pl-8"
+              />
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allChecked}
+                      indeterminate={someChecked}
+                      onCheckedChange={toggleAll}
+                      aria-label={allChecked ? "Deselect all" : "Select all"}
+                    />
+                  </TableHead>
+                  <TableHead className="font-mono text-xs uppercase tracking-wider">
+                    Service Name
+                  </TableHead>
+                  <TableHead className="font-mono text-xs uppercase tracking-wider">
+                    Type
+                  </TableHead>
+                  <TableHead className="font-mono text-xs uppercase tracking-wider">
+                    Updated
+                  </TableHead>
+                  <TableHead className="w-48" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <AnimatePresence initial={false}>
+                  {filtered.map((service) => {
+                    const isSelected = selected.includes(service.id);
+                    return (
+                      <motion.tr
+                        key={service.id}
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        data-state={isSelected ? "selected" : undefined}
+                        className={cn(
+                          "h-14 border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+                          service.suspend && "opacity-70",
+                        )}
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleOne(service.id)}
+                            aria-label={`Select ${service.service_name}`}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Link href={`/projects/${id}/edit/${service.id}`}>
+                            <ServiceNameCell service={service} />
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="capitalize">
+                            {service.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatRelative(service.updated_on)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-2">
+                            <AppIconButton
+                              icon={
+                                <PauseCircle className="size-4 text-destructive" />
+                              }
+                              type="button"
+                              tooltip="Suspend"
+                              onClick={() =>
+                                setDialog({
+                                  type: "suspend",
+                                  ids: [service.id],
+                                })
+                              }
+                            />
+                            <AppIconButton
+                              icon={
+                                <Trash2 className="size-4 text-destructive" />
+                              }
+                              type="button"
+                              tooltip="Delete"
+                              onClick={() =>
+                                setDialog({ type: "delete", ids: [service.id] })
+                              }
+                            />
+                          </div>
+                        </TableCell>
+                      </motion.tr>
+                    );
+                  })}
+                </AnimatePresence>
+
+                {filtered.length === 0 && (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell
+                      colSpan={5}
+                      className="h-24 text-center text-sm text-muted-foreground"
+                    >
+                      No services match your search or filters.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
 
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="grid gap-4 sm:grid-cols-2"
-      >
-        {serviceTypes.map(
-          ({ key, title, description, cta, icon: Icon, href }) => (
-            <motion.div
-              key={key}
-              variants={item}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Card className="group h-full transition-colors hover:border-primary/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Icon className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
-                    {title}
-                  </CardTitle>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {description}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent />
-
-                <CardFooter>
-                  <Button variant="link" className="h-auto gap-1 p-0">
-                    <Link
-                      href={href(id)}
-                      className="flex flex-row items-center gap-2"
-                    >
-                      {cta}
-                      <ArrowRight className="transition-transform group-hover:translate-x-1" />
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          ),
-        )}
-      </motion.div>
-
-      {services.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1">
-                {FILTERS.map(({ key, label, icon: Icon }) => {
-                  const active = activeFilters.includes(key);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleFilter(key)}
-                      aria-pressed={active}
-                      className={cn(
-                        "relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                        active
-                          ? "text-foreground"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      <AnimatePresence initial={false}>
-                        {active && (
-                          <motion.span
-                            key="pill"
-                            className="absolute inset-0 rounded-full bg-background shadow-sm"
-                            initial={{ opacity: 0, scale: 0.85 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.85 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 30,
-                            }}
-                          />
-                        )}
-                      </AnimatePresence>
-                      {Icon && <Icon className="relative size-4" />}
-                      <span className="relative">{label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {activeFilters.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1 px-2 text-xs"
-                  onClick={() => setActiveFilters([])}
-                >
-                  <X className="size-3" />
-                  Clear
-                </Button>
-              )}
-            </div>
-            <AnimatePresence initial={false}>
-              {selectedVisible.length > 0 && (
-                <motion.div
-                  key="bulk"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/50 px-4 py-2">
-                    <span className="text-sm">
-                      {selectedVisible.length} selected
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="gap-1.5">
-                        <PauseCircle className="size-4" />
-                        Suspend
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="gap-1.5"
-                      >
-                        <Trash2 className="size-4" />
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="relative w-full ">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search services"
-              className="pl-8"
-            />
-          </div>
-
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={allChecked}
-                    indeterminate={someChecked}
-                    onCheckedChange={toggleAll}
-                    aria-label={allChecked ? "Deselect all" : "Select all"}
-                  />
-                </TableHead>
-                <TableHead className="font-mono text-xs uppercase tracking-wider">
-                  Service Name
-                </TableHead>
-                <TableHead className="font-mono text-xs uppercase tracking-wider">
-                  Type
-                </TableHead>
-                <TableHead className="font-mono text-xs uppercase tracking-wider">
-                  Updated
-                </TableHead>
-                <TableHead className="w-48" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <AnimatePresence initial={false}>
-                {filtered.map((service) => {
-                  const isSelected = selected.includes(service.id);
-                  return (
-                    <motion.tr
-                      key={service.id}
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      data-state={isSelected ? "selected" : undefined}
-                      className={cn(
-                        "h-14 border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-                        service.suspend && "opacity-70",
-                      )}
-                    >
-                      <TableCell>
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => toggleOne(service.id)}
-                          aria-label={`Select ${service.service_name}`}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Link href={`/projects/${id}/edit/${service.id}`}>
-                          <ServiceNameCell service={service} />
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize">
-                          {service.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatRelative(service.updated_on)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-2">
-                          <AppIconButton
-                            icon={
-                              <PauseCircle className="size-4 text-destructive" />
-                            }
-                            type="button"
-                            tooltip="Suspend"
-                          />
-
-                          <AppIconButton
-                            icon={
-                              <Trash2 className="size-4 text-destructive" />
-                            }
-                            type="button"
-                            tooltip="Delete"
-                          />
-                        </div>
-                      </TableCell>
-                    </motion.tr>
-                  );
-                })}
-              </AnimatePresence>
-
-              {filtered.length === 0 && (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell
-                    colSpan={5}
-                    className="h-24 text-center text-sm text-muted-foreground"
-                  >
-                    No services match your search or filters.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-    </div>
+      <ServicesSuspendDeleteDialog
+        open={dialog !== null}
+        onOpenChange={(o) => !o && setDialog(null)}
+        ids={dialog?.ids ?? []}
+        type={dialog?.type ?? "suspend"}
+      />
+    </>
   );
 }
