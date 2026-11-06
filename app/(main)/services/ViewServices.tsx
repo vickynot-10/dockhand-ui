@@ -7,10 +7,10 @@ import {
   Copy,
   ExternalLink,
   GitBranch,
-  GitCommitHorizontal,
   PauseCircle,
   PlayCircle,
   Terminal,
+  RotateCcwIcon,
   Rocket,
   Trash2,
   Plug,
@@ -137,11 +137,16 @@ function LogsCell({
   type: string;
 }) {
   return (
-    <TableCell className="w-10">
+    <TableCell className="w-10 pe-10">
       <AppIconButton
         icon={<Terminal className="size-4" />}
         tooltip="View logs"
         href={`/services/${type}/${deployment_id}/logs`}
+      />
+
+      <AppIconButton
+        icon={<RotateCcwIcon className="size-4" />}
+        tooltip="Rollback"
       />
     </TableCell>
   );
