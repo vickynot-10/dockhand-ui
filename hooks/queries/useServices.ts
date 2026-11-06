@@ -8,7 +8,7 @@ const QUERY_KEY = "services";
 
 export function useGetServicebyID(id: string) {
   return useQuery({
-    queryKey: [QUERY_KEY + id],
+    queryKey: [QUERY_KEY, id],
     queryFn: async () => {
       const res = await api.get("/services", {
         params: { id },
