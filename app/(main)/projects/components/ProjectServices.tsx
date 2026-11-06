@@ -50,6 +50,7 @@ import {
 } from "@/hooks/queries/useServices";
 
 import AppIcon from "@/components/common/AppIcons";
+import { ProjectServicesSkeleton } from "@/components/common/AppLoaders";
 
 type Props = {
   id: string;
@@ -205,7 +206,7 @@ export default function ProjectServices({ id }: Props) {
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
 
-  if (isLoading) return null;
+  if (isLoading) return <ProjectServicesSkeleton />;
   return (
     <>
       <div className="space-y-6">

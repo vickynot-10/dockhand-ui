@@ -38,6 +38,7 @@ import ServicesSuspendDeleteDialog from "../projects/components/ServicesDialog";
 
 import AppIcon from "@/components/common/AppIcons";
 import AppIconButton from "@/components/common/AppIconButton";
+import { ViewServiceSkeleton } from "@/components/common/AppLoaders";
 type Props = {
   id: string;
   type: string;
@@ -210,7 +211,7 @@ function EmptyRow() {
   return (
     <TableRow className="hover:bg-transparent">
       <TableCell
-        colSpan={6}
+        colSpan={7}
         className="h-24 text-center text-sm text-muted-foreground"
       >
         No deployments yet.
@@ -403,7 +404,7 @@ export default function ViewService({ id, type }: Props) {
   const service = (data?.data?.services ?? null) as ServiceData | null;
   const deployments = (data?.data?.deployments ?? EMPTY) as Deployment[];
 
-  if (isLoading) return null;
+  if (isLoading) return <ViewServiceSkeleton />;
 
   if (!service) {
     return <p className="text-sm text-muted-foreground">Service not found.</p>;

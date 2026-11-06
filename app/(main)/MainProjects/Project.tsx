@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { useGetProjects } from "@/hooks/queries/useProjects";
 import CreateOrEditProjects from "./CreateProject";
 import ProjectCard, { Project } from "./ProjectCard";
-import ProjectsSkeleton from "./ProjectsLoad";
+import { ProjectsSkeleton } from "@/components/common/AppLoaders";
 
 type CreateTriggerProps = {
   onClick: () => void;
@@ -26,6 +26,7 @@ function CreateCardTrigger({ onClick }: CreateTriggerProps) {
 export default function Projects() {
   const { data, isLoading } = useGetProjects();
 
+  if (isLoading) return <ProjectsSkeleton />;
   const projects: Project[] = data?.data ?? [];
 
   return (
@@ -34,18 +35,14 @@ export default function Projects() {
         <CreateOrEditProjects />
       </div>
 
-      {isLoading ? (
-        <ProjectsSkeleton />
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project, index) => (
-            <ProjectCard key={project.id} project={project} index={index} />
-          ))}
-          <CreateOrEditProjects
-            trigger={(props) => <CreateCardTrigger {...props} />}
-          />
-        </div>
-      )}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {projects.map((project, index) => (
+          <ProjectCard key={project.id} project={project} index={index} />
+        ))}
+        <CreateOrEditProjects
+          trigger={(props) => <CreateCardTrigger {...props} />}
+        />
+      </div>
     </div>
   );
 }
