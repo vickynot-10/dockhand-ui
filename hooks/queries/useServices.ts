@@ -6,6 +6,37 @@ import { toast } from "sonner";
 
 const QUERY_KEY = "services";
 
+export function useGetServicebyID(id: string) {
+  return useQuery({
+    queryKey: [QUERY_KEY + id],
+    queryFn: async () => {
+      const res = await api.get("/services", {
+        params: { id },
+      });
+      return res.data ?? null;
+    },
+    enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: true,
+  });
+}
+
+export function useDeployService() {
+  return useMutation({
+    mutationFn: async (service_id: string) => {
+      const res = await api.post("/services/deploy", {
+        service_id,
+      });
+      return res.data ?? null;
+    },
+    onSuccess: (res) => {
+      if (res?.success) {
+        toast.success(res.msg);
+      }
+    },
+  });
+}
+
 export function useSaveService() {
   return useMutation({
     mutationFn: async (data: GitHubFormValues | DockerFormValues) => {

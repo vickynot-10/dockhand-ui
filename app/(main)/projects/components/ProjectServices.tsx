@@ -13,6 +13,7 @@ import {
   PauseCircle,
   PlayCircle,
   X,
+  Rocket,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -43,6 +44,7 @@ import AppIconButton from "@/components/common/AppIconButton";
 import ServicesSuspendDeleteDialog, {
   type ServiceActionType,
 } from "./ServicesDialog";
+import { useDeployService } from "@/hooks/queries/useServices";
 
 type Props = {
   id: string;
@@ -143,6 +145,8 @@ export default function ProjectServices({ id }: Props) {
   const { data, isLoading } = useGetProjectServices(id);
   const project_data = data?.data ?? null;
   const services = (project_data?.services ?? []) as Service[];
+
+  const { mutate, isPending, variables: deployingId } = useDeployService();
 
   const [dialog, setDialog] = useState<{
     type: ServiceActionType;
@@ -427,7 +431,9 @@ export default function ProjectServices({ id }: Props) {
                           />
                         </TableCell>
                         <TableCell>
-                          <Link href={`/projects/${id}/edit/${service.id}`}>
+                          <Link
+                            href={`/services/${service.type}/${service.id}`}
+                          >
                             <ServiceNameCell service={service} />
                           </Link>
                         </TableCell>
@@ -441,6 +447,17 @@ export default function ProjectServices({ id }: Props) {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-2">
+                            <AppIconButton
+                              icon={<Rocket className="size-4 " />}
+                              type="button"
+                              tooltip="Deploy"
+                              disabled={
+                                service.suspend ||
+                                (isPending && deployingId === service.id)
+                              }
+                              onClick={() => mutate(service.id)}
+                            />
+
                             {service.suspend ? (
                               <AppIconButton
                                 icon={
