@@ -11,6 +11,7 @@ import {
   Search,
   Trash2,
   PauseCircle,
+  PlayCircle,
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -39,7 +40,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import AppIconButton from "@/components/common/AppIconButton";
-import ServicesSuspendDeleteDialog from "./ServicesDialog";
+import ServicesSuspendDeleteDialog, {
+  type ServiceActionType,
+} from "./ServicesDialog";
 
 type Props = {
   id: string;
@@ -142,7 +145,7 @@ export default function ProjectServices({ id }: Props) {
   const services = (project_data?.services ?? []) as Service[];
 
   const [dialog, setDialog] = useState<{
-    type: "suspend" | "delete";
+    type: ServiceActionType;
     ids: string[];
   } | null>(null);
 
@@ -168,6 +171,13 @@ export default function ProjectServices({ id }: Props) {
 
   const filteredIds = filtered.map((s) => s.id);
   const selectedVisible = selected.filter((sid) => filteredIds.includes(sid));
+  const selectedServices = filtered.filter((s) =>
+    selectedVisible.includes(s.id),
+  );
+  const suspendIds = selectedServices
+    .filter((s) => !s.suspend)
+    .map((s) => s.id);
+  const resumeIds = selectedServices.filter((s) => s.suspend).map((s) => s.id);
   const allChecked =
     filtered.length > 0 && selectedVisible.length === filtered.length;
   const someChecked = selectedVisible.length > 0 && !allChecked;
@@ -316,16 +326,32 @@ export default function ProjectServices({ id }: Props) {
                         {selectedVisible.length} selected
                       </span>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5"
-                          onClick={() =>
-                            setDialog({ type: "suspend", ids: selectedVisible })
-                          }
-                        >
-                          <PauseCircle className="size-4" /> Suspend
-                        </Button>
+                        {resumeIds.length > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() =>
+                              setDialog({ type: "resume", ids: resumeIds })
+                            }
+                          >
+                            <PlayCircle className="size-4" /> Resume (
+                            {resumeIds.length})
+                          </Button>
+                        )}
+                        {suspendIds.length > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() =>
+                              setDialog({ type: "suspend", ids: suspendIds })
+                            }
+                          >
+                            <PauseCircle className="size-4" /> Suspend (
+                            {suspendIds.length})
+                          </Button>
+                        )}
                         <Button
                           variant="destructive"
                           size="sm"
@@ -415,19 +441,35 @@ export default function ProjectServices({ id }: Props) {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-2">
-                            <AppIconButton
-                              icon={
-                                <PauseCircle className="size-4 text-destructive" />
-                              }
-                              type="button"
-                              tooltip="Suspend"
-                              onClick={() =>
-                                setDialog({
-                                  type: "suspend",
-                                  ids: [service.id],
-                                })
-                              }
-                            />
+                            {service.suspend ? (
+                              <AppIconButton
+                                icon={
+                                  <PlayCircle className="size-4 text-green-600" />
+                                }
+                                type="button"
+                                tooltip="Resume"
+                                onClick={() =>
+                                  setDialog({
+                                    type: "resume",
+                                    ids: [service.id],
+                                  })
+                                }
+                              />
+                            ) : (
+                              <AppIconButton
+                                icon={
+                                  <PauseCircle className="size-4 text-destructive" />
+                                }
+                                type="button"
+                                tooltip="Suspend"
+                                onClick={() =>
+                                  setDialog({
+                                    type: "suspend",
+                                    ids: [service.id],
+                                  })
+                                }
+                              />
+                            )}
                             <AppIconButton
                               icon={
                                 <Trash2 className="size-4 text-destructive" />
@@ -466,6 +508,7 @@ export default function ProjectServices({ id }: Props) {
         onOpenChange={(o) => !o && setDialog(null)}
         ids={dialog?.ids ?? []}
         type={dialog?.type ?? "suspend"}
+        onSuccess={() => setSelected([])}
       />
     </>
   );

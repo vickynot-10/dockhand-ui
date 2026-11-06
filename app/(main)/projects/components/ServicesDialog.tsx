@@ -13,25 +13,54 @@ import {
 } from "@/components/ui/dialog";
 import { useServicesBulkAction } from "@/hooks/queries/useServices";
 
+export type ServiceActionType = "suspend" | "resume" | "delete";
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   ids: string[];
-  type: "suspend" | "delete";
+  type: ServiceActionType;
+  onSuccess?: () => void;
 };
 
 const DELETE_KEYWORD = "DELETE";
+
+const ACTION_COPY = {
+  suspend: {
+    title: "Suspend",
+    description: "Suspended services stop running until you resume them.",
+    question: "Are you sure you want to suspend",
+    confirm: "Confirm suspend",
+    pending: "Suspending...",
+  },
+  resume: {
+    title: "Resume",
+    description: "Resumed services start running again.",
+    question: "Are you sure you want to resume",
+    confirm: "Confirm resume",
+    pending: "Resuming...",
+  },
+  delete: {
+    title: "Delete",
+    description: "This action cannot be undone.",
+    question: "",
+    confirm: "Confirm delete",
+    pending: "Deleting...",
+  },
+} as const;
 
 export default function ServicesSuspendDeleteDialog({
   open,
   onOpenChange,
   ids,
   type,
+  onSuccess,
 }: Props) {
   const [deleteText, setDeleteText] = useState("");
 
   const { mutate, isPending } = useServicesBulkAction();
   const isDelete = type === "delete";
+  const copy = ACTION_COPY[type];
   const count = ids.length;
   const noun = `service${count === 1 ? "" : "s"}`;
   const canConfirm = isDelete ? deleteText.trim() === DELETE_KEYWORD : true;
@@ -52,7 +81,8 @@ export default function ServicesSuspendDeleteDialog({
       {
         onSuccess: (res: any) => {
           if (res?.success) {
-            // close();
+            close();
+            onSuccess?.();
           }
         },
       },
@@ -64,12 +94,10 @@ export default function ServicesSuspendDeleteDialog({
       <DialogContent className="gap-0 p-0 sm:max-w-3xl">
         <DialogHeader className="border-b px-8 py-7">
           <DialogTitle className="text-3xl font-semibold">
-            {isDelete ? `Delete ${noun}` : `Suspend ${noun}`}
+            {copy.title} {noun}
           </DialogTitle>
           <DialogDescription className="text-base">
-            {isDelete
-              ? "This action cannot be undone."
-              : "Suspended services stop running until you resume them."}
+            {copy.description}
           </DialogDescription>
         </DialogHeader>
 
@@ -101,7 +129,7 @@ export default function ServicesSuspendDeleteDialog({
         ) : (
           <div className="px-8 py-8">
             <p className="text-base text-muted-foreground">
-              Are you sure you want to suspend{" "}
+              {copy.question}{" "}
               <span className="font-semibold text-foreground">
                 {count} {noun}
               </span>
@@ -118,13 +146,7 @@ export default function ServicesSuspendDeleteDialog({
             onClick={handleConfirm}
             disabled={!canConfirm || isPending}
           >
-            {isDelete
-              ? isPending
-                ? "Deleting..."
-                : "Confirm delete"
-              : isPending
-                ? "Suspending..."
-                : "Confirm suspend"}
+            {isPending ? copy.pending : copy.confirm}
           </Button>
           <Button
             type="button"
