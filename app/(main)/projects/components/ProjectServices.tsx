@@ -14,6 +14,7 @@ import {
   PlayCircle,
   X,
   Rocket,
+  Edit2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -448,6 +449,13 @@ export default function ProjectServices({ id }: Props) {
                               onClick={() => mutate(service.id)}
                             />
 
+                            <AppIconButton
+                              icon={<Edit2 className="size-4 " />}
+                              type="button"
+                              tooltip="Edit Service"
+                              href={`/projects/${id}/edit/${service.id}`}
+                            />
+
                             {!service.enabled ? (
                               <AppIconButton
                                 icon={
@@ -466,7 +474,7 @@ export default function ProjectServices({ id }: Props) {
                             ) : (
                               <AppIconButton
                                 icon={
-                                  <PauseCircle className="size-4 text-destructive" />
+                                  <PauseCircle className="size-4 text-amber-600" />
                                 }
                                 type="button"
                                 tooltip="Suspend"
