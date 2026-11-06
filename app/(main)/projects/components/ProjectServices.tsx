@@ -49,6 +49,8 @@ import {
   useServicesBulkAction,
 } from "@/hooks/queries/useServices";
 
+import AppIcon from "@/components/common/AppIcons";
+
 type Props = {
   id: string;
 };
@@ -89,14 +91,10 @@ const matchesFilter = (s: Service, key: FilterKey) => {
 
 function ServiceNameCell({ service }: { service: Service }) {
   const isDocker = service.deploy_type === DEPLOY_TYPE.DOCKER;
-  const Icon = isDocker ? Container : GitBranch;
 
   return (
     <div className="flex items-center gap-3">
-      <Icon
-        className="size-4 shrink-0 text-muted-foreground"
-        aria-label={isDocker ? "Docker" : "GitHub"}
-      />
+      <AppIcon type={isDocker ? "docker" : "github"} />
       <span className="font-medium underline underline-offset-4">
         {service.service_name}
       </span>

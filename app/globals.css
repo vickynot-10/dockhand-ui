@@ -434,3 +434,7 @@ html {
   top: 50%;
   transform: translate(-50%, -50%);
 }
+
+.icon_wrap {
+  color: var(--text);
+}
