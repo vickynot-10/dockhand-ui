@@ -432,7 +432,7 @@ export default function ProjectServices({ id }: Props) {
                         </TableCell>
                         <TableCell>
                           <Link
-                            href={`/services/${service.type}/${service.id}`}
+                            href={`/services/${service.type}/${service.id}/deploys`}
                           >
                             <ServiceNameCell service={service} />
                           </Link>

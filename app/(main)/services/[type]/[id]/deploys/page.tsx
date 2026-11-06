@@ -1,4 +1,4 @@
-import ViewService from "../../ViewServices";
+import ViewService from "../../../ViewServices";
 
 type Props = {
   params: Promise<{
