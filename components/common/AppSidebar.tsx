@@ -45,6 +45,7 @@ import { useSignout } from "@/hooks/queries/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useGetServicebyID } from "@/hooks/queries/useServices";
+import { toast } from "sonner";
 export type NavItem = {
   label?: string;
   isSection?: boolean;
@@ -72,6 +73,14 @@ export function AppSidebar() {
   const base = `/services/${serviceType}/${serviceId}`;
 
   function goBack() {
+    if (isServiceLoading) {
+      toast.info("Try in a Second");
+      return;
+    }
+    if (data && data?.services && data.services?.project_id) {
+      router.push(`/projects/${data.services.project_id}`);
+      return;
+    }
     if (window.history.length > 1) router.back();
     else router.push("/");
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useGetServicebyID } from "@/hooks/queries/useServices";
-
+import { DEPLOYMENT_STATUS, DEPLOY_TRIGGER, DEPLOY_TYPE } from "@/constants";
 type Props = {
   id: string;
   type: string;
