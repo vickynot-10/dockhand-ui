@@ -18,7 +18,7 @@ export function useGetProjects() {
 
 export function useGetProjectServices(id: string) {
   return useQuery({
-    queryKey: [QUERY_KEY + "services", id],
+    queryKey: [QUERY_KEY, "services", id],
     queryFn: async () => {
       const res = await api.get("/projects/services", {
         params: { id },

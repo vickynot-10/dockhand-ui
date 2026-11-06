@@ -44,7 +44,10 @@ import AppIconButton from "@/components/common/AppIconButton";
 import ServicesSuspendDeleteDialog, {
   type ServiceActionType,
 } from "./ServicesDialog";
-import { useDeployService } from "@/hooks/queries/useServices";
+import {
+  useDeployService,
+  useServicesBulkAction,
+} from "@/hooks/queries/useServices";
 
 type Props = {
   id: string;
@@ -56,7 +59,7 @@ type Service = {
   deploy_type: number;
   type: "static" | "web";
   updated_on: string;
-  suspend: boolean;
+  enabled: boolean;
 };
 
 type FilterKey = "github" | "docker" | "static" | "web" | "suspended";
@@ -80,7 +83,7 @@ const matchesFilter = (s: Service, key: FilterKey) => {
     case "web":
       return s.type === "web";
     case "suspended":
-      return s.suspend;
+      return !s.enabled;
   }
 };
 
@@ -97,7 +100,7 @@ function ServiceNameCell({ service }: { service: Service }) {
       <span className="font-medium underline underline-offset-4">
         {service.service_name}
       </span>
-      {service.suspend && (
+      {!service.enabled && (
         <Badge variant="outline" className="text-amber-600">
           Suspended
         </Badge>
@@ -146,6 +149,7 @@ export default function ProjectServices({ id }: Props) {
   const project_data = data?.data ?? null;
   const services = (project_data?.services ?? []) as Service[];
 
+  const { mutate: ResumeMutate } = useServicesBulkAction();
   const { mutate, isPending, variables: deployingId } = useDeployService();
 
   const [dialog, setDialog] = useState<{
@@ -178,10 +182,10 @@ export default function ProjectServices({ id }: Props) {
   const selectedServices = filtered.filter((s) =>
     selectedVisible.includes(s.id),
   );
+
   const suspendIds = selectedServices
-    .filter((s) => !s.suspend)
+    .filter((s) => s.enabled === true)
     .map((s) => s.id);
-  const resumeIds = selectedServices.filter((s) => s.suspend).map((s) => s.id);
   const allChecked =
     filtered.length > 0 && selectedVisible.length === filtered.length;
   const someChecked = selectedVisible.length > 0 && !allChecked;
@@ -330,19 +334,6 @@ export default function ProjectServices({ id }: Props) {
                         {selectedVisible.length} selected
                       </span>
                       <div className="flex items-center gap-2">
-                        {resumeIds.length > 0 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5"
-                            onClick={() =>
-                              setDialog({ type: "resume", ids: resumeIds })
-                            }
-                          >
-                            <PlayCircle className="size-4" /> Resume (
-                            {resumeIds.length})
-                          </Button>
-                        )}
                         {suspendIds.length > 0 && (
                           <Button
                             variant="outline"
@@ -420,7 +411,7 @@ export default function ProjectServices({ id }: Props) {
                         data-state={isSelected ? "selected" : undefined}
                         className={cn(
                           "h-14 border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-                          service.suspend && "opacity-70",
+                          service.enabled && "opacity-70",
                         )}
                       >
                         <TableCell>
@@ -452,13 +443,13 @@ export default function ProjectServices({ id }: Props) {
                               type="button"
                               tooltip="Deploy"
                               disabled={
-                                service.suspend ||
+                                !service.enabled ||
                                 (isPending && deployingId === service.id)
                               }
                               onClick={() => mutate(service.id)}
                             />
 
-                            {service.suspend ? (
+                            {!service.enabled ? (
                               <AppIconButton
                                 icon={
                                   <PlayCircle className="size-4 text-green-600" />
@@ -466,9 +457,10 @@ export default function ProjectServices({ id }: Props) {
                                 type="button"
                                 tooltip="Resume"
                                 onClick={() =>
-                                  setDialog({
-                                    type: "resume",
+                                  ResumeMutate({
+                                    action: "resume",
                                     ids: [service.id],
+                                    project_id: id,
                                   })
                                 }
                               />
@@ -526,6 +518,7 @@ export default function ProjectServices({ id }: Props) {
         ids={dialog?.ids ?? []}
         type={dialog?.type ?? "suspend"}
         onSuccess={() => setSelected([])}
+        project_id={id}
       />
     </>
   );

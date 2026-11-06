@@ -13,13 +13,14 @@ import {
 } from "@/components/ui/dialog";
 import { useServicesBulkAction } from "@/hooks/queries/useServices";
 
-export type ServiceActionType = "suspend" | "resume" | "delete";
+export type ServiceActionType = "suspend" | "delete";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   ids: string[];
   type: ServiceActionType;
+  project_id: string;
   onSuccess?: () => void;
 };
 
@@ -32,13 +33,6 @@ const ACTION_COPY = {
     question: "Are you sure you want to suspend",
     confirm: "Confirm suspend",
     pending: "Suspending...",
-  },
-  resume: {
-    title: "Resume",
-    description: "Resumed services start running again.",
-    question: "Are you sure you want to resume",
-    confirm: "Confirm resume",
-    pending: "Resuming...",
   },
   delete: {
     title: "Delete",
@@ -55,6 +49,7 @@ export default function ServicesSuspendDeleteDialog({
   ids,
   type,
   onSuccess,
+  project_id,
 }: Props) {
   const [deleteText, setDeleteText] = useState("");
 
@@ -77,7 +72,7 @@ export default function ServicesSuspendDeleteDialog({
   function handleConfirm() {
     if (!canConfirm) return;
     mutate(
-      { ids, action: type },
+      { ids, action: type, project_id: project_id },
       {
         onSuccess: (res: any) => {
           if (res?.success) {

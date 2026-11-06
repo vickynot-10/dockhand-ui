@@ -1,7 +1,7 @@
 import { GitHubFormValues, DockerFormValues } from "@/types/services.types";
 import { api } from "@/utils/axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+
 import { toast } from "sonner";
 
 const QUERY_KEY = "services";
@@ -50,13 +50,18 @@ export function useSaveService() {
   });
 }
 
+// enabled = true then send suspend , enabled false then resume
 export type ServicesBulkAction = "suspend" | "delete" | "resume";
 
 export function useServicesBulkAction() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { ids: string[]; action: ServicesBulkAction }) => {
+    mutationFn: async (data: {
+      ids: string[];
+      action: ServicesBulkAction;
+      project_id: string;
+    }) => {
       const res = await api.post("/services/actions", data);
       return res.data ?? null;
     },
@@ -67,7 +72,16 @@ export function useServicesBulkAction() {
             ? "Services deleted successfully!"
             : "Services suspended successfully!";
         toast.success(res.msg || fallback);
-        queryClient.invalidateQueries({ queryKey: ["projects-services"] });
+        queryClient.invalidateQueries({
+          queryKey: ["projects", "services", vars.project_id],
+        });
+        if (vars.action !== "delete") {
+          vars.ids.forEach((service_id) =>
+            queryClient.invalidateQueries({
+              queryKey: [QUERY_KEY, service_id],
+            }),
+          );
+        }
       }
     },
   });
