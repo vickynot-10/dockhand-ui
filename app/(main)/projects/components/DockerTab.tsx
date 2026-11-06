@@ -21,7 +21,7 @@ export default function DockerTab({ id, type }: Props) {
     formState: { errors, dirtyFields },
     control,
   } = useForm<DockerFormValues>({
-    defaultValues: { image_url: "", name: "", slug: "" },
+    defaultValues: { image_url: "", name: "", slug: "", port: 3000 },
   });
 
   const projectName = useWatch({ control, name: "name" });
@@ -47,6 +47,7 @@ export default function DockerTab({ id, type }: Props) {
       type,
       slug: values.slug,
       project_id: id,
+      port: values.port,
     };
     mutate(payload, {
       onSuccess: (res) => {
@@ -96,6 +97,30 @@ export default function DockerTab({ id, type }: Props) {
             )}
             {errors.slug && (
               <p className="text-sm text-destructive">{errors.slug.message}</p>
+            )}
+          </FieldRow>
+
+          <FieldRow
+            label="Port"
+            description="The port your app listens on inside the container"
+            htmlFor="port"
+          >
+            <Input
+              id="port"
+              type="number"
+              placeholder="3000"
+              {...register("port", {
+                required: "Port is required",
+                valueAsNumber: true,
+                min: { value: 1, message: "Port must be between 1 and 65535" },
+                max: {
+                  value: 65535,
+                  message: "Port must be between 1 and 65535",
+                },
+              })}
+            />
+            {errors.port && (
+              <p className="text-sm text-destructive">{errors.port.message}</p>
             )}
           </FieldRow>
 

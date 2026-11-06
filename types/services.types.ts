@@ -4,6 +4,7 @@ interface CommonFields {
   deploy_type: number;
   type: string;
   project_id: string;
+  port: number;
 }
 
 export interface GitHubFormValues extends CommonFields {

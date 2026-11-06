@@ -28,6 +28,7 @@ export default function GitHubTab({ id, type }: Props) {
       repo_full_name: "",
       branch: "",
       root_directory: "/",
+      port: 3000,
       build_command: "",
       output_directory: "",
       env_vars: [{ key: "", value: "" }],
@@ -86,8 +87,6 @@ export default function GitHubTab({ id, type }: Props) {
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(handleValidSubmit)} className="w-full">
         <div className="w-full space-y-6 pb-6">
-          <RepoField />
-
           <FieldRow
             label="Name"
             description="A Name for Site"
@@ -126,6 +125,30 @@ export default function GitHubTab({ id, type }: Props) {
             )}
           </FieldRow>
 
+          <FieldRow
+            label="Port"
+            description="The port your app listens on inside the container"
+            htmlFor="port"
+          >
+            <Input
+              id="port"
+              type="number"
+              placeholder="3000"
+              {...register("port", {
+                required: "Port is required",
+                valueAsNumber: true,
+                min: { value: 1, message: "Port must be between 1 and 65535" },
+                max: {
+                  value: 65535,
+                  message: "Port must be between 1 and 65535",
+                },
+              })}
+            />
+            {errors.port && (
+              <p className="text-sm text-destructive">{errors.port.message}</p>
+            )}
+          </FieldRow>
+          <RepoField />
           {repoFullName && (
             <>
               <BranchField />
