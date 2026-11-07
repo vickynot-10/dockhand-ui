@@ -29,9 +29,11 @@ export type Props = {
 export interface DockerProps extends Props {
   isEdit: boolean;
   editData?: DockerFormValues;
+  service_id?: string;
 }
 
 export interface GithubProps extends Props {
   isEdit: boolean;
-  editData?: DockerFormValues;
+  editData?: GitHubFormValues;
+  service_id?: string;
 }

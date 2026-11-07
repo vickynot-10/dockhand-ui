@@ -7,6 +7,7 @@ import DockerTab from "../../../components/DockerTab";
 import { formatDateTime } from "@/lib/date";
 import AppIcon from "@/components/common/AppIcons";
 import GitHubTab from "../../../components/Githubtab";
+import { EditServiceSkeleton } from "@/components/common/AppLoaders";
 
 export type Props = {
   id: string;
@@ -17,6 +18,8 @@ export default function EditService({ service_id, id }: Props) {
   const { data, isLoading } = useGetServicebyIDEdit(service_id);
 
   const service = data?.data ?? null;
+
+  if (isLoading) return <EditServiceSkeleton />;
 
   if (!service) return null;
 
@@ -54,6 +57,7 @@ export default function EditService({ service_id, id }: Props) {
           type={service.type}
           isEdit={true}
           editData={service}
+          service_id={service_id}
         />
       )}
 
@@ -63,6 +67,7 @@ export default function EditService({ service_id, id }: Props) {
           type={service.type}
           isEdit={true}
           editData={service}
+          service_id={service_id}
         />
       )}
     </>

@@ -19,7 +19,13 @@ import { useEffect } from "react";
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost";
 
-export default function GitHubTab({ id, type, isEdit, editData }: GithubProps) {
+export default function GitHubTab({
+  id,
+  type,
+  isEdit,
+  editData,
+  service_id,
+}: GithubProps) {
   const methods = useForm<GitHubFormValues>({
     defaultValues: {
       name: "",
@@ -61,7 +67,7 @@ export default function GitHubTab({ id, type, isEdit, editData }: GithubProps) {
   }, [register]);
 
   useEffect(() => {
-    if (!isEdit || !editData) return;
+    if (!isEdit || !editData || !service_id) return;
     reset(editData);
   }, [isEdit, editData]);
 
@@ -82,7 +88,8 @@ export default function GitHubTab({ id, type, isEdit, editData }: GithubProps) {
       type,
       project_id: id,
     };
-    if (isEdit) {
+    if (isEdit && service_id) {
+      (payload as any).service_id = service_id;
       editService(payload, {
         onSuccess: (res) => {
           if (res?.success) {

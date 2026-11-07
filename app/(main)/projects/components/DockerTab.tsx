@@ -14,7 +14,13 @@ import { useEffect } from "react";
 import { useEditService } from "../../../../hooks/queries/useServices";
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost";
-export default function DockerTab({ id, type, isEdit, editData }: DockerProps) {
+export default function DockerTab({
+  id,
+  type,
+  isEdit,
+  editData,
+  service_id,
+}: DockerProps) {
   const {
     register,
     handleSubmit,
@@ -27,7 +33,7 @@ export default function DockerTab({ id, type, isEdit, editData }: DockerProps) {
   });
 
   useEffect(() => {
-    if (!isEdit || !editData) return;
+    if (!isEdit || !editData || !service_id) return;
     reset(editData);
   }, [isEdit, editData]);
 
@@ -58,7 +64,8 @@ export default function DockerTab({ id, type, isEdit, editData }: DockerProps) {
       port: values.port,
     };
 
-    if (isEdit) {
+    if (isEdit && service_id) {
+      (payload as any).service_id = service_id;
       editService(payload, {
         onSuccess: (res) => {
           if (res?.success) {
