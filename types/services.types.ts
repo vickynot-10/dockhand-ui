@@ -25,3 +25,8 @@ export type Props = {
   id: string;
   type: string;
 };
+
+export interface DockerProps extends Props {
+  isEdit: boolean;
+  editData?: DockerFormValues;
+}

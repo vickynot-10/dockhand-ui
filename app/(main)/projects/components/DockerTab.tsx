@@ -8,21 +8,28 @@ import { AppButton } from "@/components/common/AppButton";
 import { useRouter } from "next/navigation";
 
 import { generateSlug, validateSlug } from "@/lib/genertateSlug";
-import { DockerFormValues, Props } from "@/types/services.types";
+import { DockerFormValues, DockerProps, Props } from "@/types/services.types";
 import { useSaveService } from "@/hooks/queries/useServices";
 import { useEffect } from "react";
+import { useEditService } from "../../../../hooks/queries/useServices";
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost";
-export default function DockerTab({ id, type }: Props) {
+export default function DockerTab({ id, type, isEdit, editData }: DockerProps) {
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors, dirtyFields },
     control,
+    reset,
   } = useForm<DockerFormValues>({
     defaultValues: { image_url: "", name: "", slug: "", port: 3000 },
   });
+
+  useEffect(() => {
+    if (!isEdit || !editData) return;
+    reset(editData);
+  }, [isEdit, editData]);
 
   const projectName = useWatch({ control, name: "name" });
   const projectSlug = useWatch({ control, name: "slug" });
@@ -30,6 +37,7 @@ export default function DockerTab({ id, type }: Props) {
   const router = useRouter();
 
   const { mutate, isPending } = useSaveService();
+  const { mutate: editService, isPending: isEditing } = useEditService();
   function GoBack() {
     router.push(`/projects/${id}`);
   }
@@ -49,6 +57,18 @@ export default function DockerTab({ id, type }: Props) {
       project_id: id,
       port: values.port,
     };
+
+    if (isEdit) {
+      editService(payload, {
+        onSuccess: (res) => {
+          if (res?.success) {
+            GoBack();
+          }
+        },
+      });
+      return;
+    }
+
     mutate(payload, {
       onSuccess: (res) => {
         if (res?.success) {
@@ -149,7 +169,8 @@ export default function DockerTab({ id, type }: Props) {
               variant="secondary"
               type="button"
               idleLabel="Cancel"
-              isLoading={isPending}
+              isLoading={isPending || isEditing}
+              disabled={isPending || isEditing}
               onClick={GoBack}
               className=" min-w-30     py-6"
             />
@@ -157,7 +178,8 @@ export default function DockerTab({ id, type }: Props) {
             <AppButton
               idleLabel="Deploy Site"
               className=" min-w-30 py-6"
-              isLoading={isPending}
+              isLoading={isPending || isEditing}
+              disabled={isPending || isEditing}
               type="submit"
               loadingLabel="Deploying..."
               successLabel="Started"

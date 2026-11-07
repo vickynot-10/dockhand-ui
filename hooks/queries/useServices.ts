@@ -20,6 +20,20 @@ export function useGetServicebyID(id: string) {
   });
 }
 
+export function useGetServicebyIDEdit(id: string) {
+  return useQuery({
+    queryKey: [QUERY_KEY, "edit", id],
+    queryFn: async () => {
+      const res = await api.get("/services/get-service", {
+        params: { id },
+      });
+      return res.data ?? null;
+    },
+    enabled: !!id,
+    staleTime: Infinity,
+  });
+}
+
 export function useDeployService() {
   return useMutation({
     mutationFn: async (service_id: string) => {
@@ -40,6 +54,20 @@ export function useSaveService() {
   return useMutation({
     mutationFn: async (data: GitHubFormValues | DockerFormValues) => {
       const res = await api.post("/services", data);
+      return res.data ?? null;
+    },
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success(res.msg || "Service Saved successfully!");
+      }
+    },
+  });
+}
+
+export function useEditService() {
+  return useMutation({
+    mutationFn: async (data: GitHubFormValues | DockerFormValues) => {
+      const res = await api.put("/services", data);
       return res.data ?? null;
     },
     onSuccess: (res: any) => {
