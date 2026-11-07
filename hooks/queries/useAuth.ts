@@ -106,6 +106,6 @@ export function useSignout() {
 }
 
 export async function SignOut() {
-  const res = await api.post("/sign-out");
+  const res = await api.post("/auth/sign-out");
   return res.data;
 }

@@ -30,3 +30,8 @@ export interface DockerProps extends Props {
   isEdit: boolean;
   editData?: DockerFormValues;
 }
+
+export interface GithubProps extends Props {
+  isEdit: boolean;
+  editData?: DockerFormValues;
+}

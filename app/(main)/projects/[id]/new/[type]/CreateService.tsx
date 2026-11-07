@@ -42,7 +42,7 @@ export default function CreateNewService({ id, type }: Props) {
 
       <div className="border-t border-border pb-5 ">
         <TransitionPanel activeIndex={activeIndex} direction={direction}>
-          <GitHubTab id={id} type={type} />
+          <GitHubTab id={id} type={type} isEdit={false} />
           <DockerTab id={id} type={type} isEdit={false} />
         </TransitionPanel>
       </div>

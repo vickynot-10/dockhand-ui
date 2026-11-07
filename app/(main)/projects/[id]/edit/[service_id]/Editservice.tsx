@@ -6,6 +6,7 @@ import { useGetServicebyIDEdit } from "@/hooks/queries/useServices";
 import DockerTab from "../../../components/DockerTab";
 import { formatDateTime } from "@/lib/date";
 import AppIcon from "@/components/common/AppIcons";
+import GitHubTab from "../../../components/Githubtab";
 
 export type Props = {
   id: string;
@@ -49,6 +50,15 @@ export default function EditService({ service_id, id }: Props) {
 
       {isDocker && (
         <DockerTab
+          id={id}
+          type={service.type}
+          isEdit={true}
+          editData={service}
+        />
+      )}
+
+      {!isDocker && (
+        <GitHubTab
           id={id}
           type={service.type}
           isEdit={true}

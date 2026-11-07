@@ -12,14 +12,14 @@ import { Input } from "@/components/ui/input";
 import { DEPLOY_TYPE } from "@/constants";
 import { AppButton } from "@/components/common/AppButton";
 import { useRouter } from "next/navigation";
-import { useSaveService } from "@/hooks/queries/useServices";
+import { useEditService, useSaveService } from "@/hooks/queries/useServices";
 import { generateSlug, validateSlug } from "@/lib/genertateSlug";
-import { GitHubFormValues, Props } from "@/types/services.types";
+import { GitHubFormValues, GithubProps } from "@/types/services.types";
 import { useEffect } from "react";
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost";
 
-export default function GitHubTab({ id, type }: Props) {
+export default function GitHubTab({ id, type, isEdit, editData }: GithubProps) {
   const methods = useForm<GitHubFormValues>({
     defaultValues: {
       name: "",
@@ -41,6 +41,7 @@ export default function GitHubTab({ id, type }: Props) {
     handleSubmit,
     setValue,
     formState: { errors, dirtyFields },
+    reset,
   } = methods;
 
   const repoFullName = useWatch({ control, name: "repo_full_name" });
@@ -49,6 +50,8 @@ export default function GitHubTab({ id, type }: Props) {
 
   const { mutate, isPending } = useSaveService();
 
+  const { mutate: editService, isPending: isEditing } = useEditService();
+
   const router = useRouter();
 
   useEffect(() => {
@@ -56,6 +59,11 @@ export default function GitHubTab({ id, type }: Props) {
     register("branch", { required: "Branch is required" });
     register("root_directory", { required: "Root directory is required" });
   }, [register]);
+
+  useEffect(() => {
+    if (!isEdit || !editData) return;
+    reset(editData);
+  }, [isEdit, editData]);
 
   useEffect(() => {
     if (dirtyFields.slug) return;
@@ -74,6 +82,16 @@ export default function GitHubTab({ id, type }: Props) {
       type,
       project_id: id,
     };
+    if (isEdit) {
+      editService(payload, {
+        onSuccess: (res) => {
+          if (res?.success) {
+            GoBack();
+          }
+        },
+      });
+      return;
+    }
     mutate(payload, {
       onSuccess: (res) => {
         if (res?.success) {
@@ -164,7 +182,8 @@ export default function GitHubTab({ id, type }: Props) {
             variant="secondary"
             type="button"
             idleLabel="Cancel"
-            isLoading={isPending}
+            isLoading={isPending || isEditing}
+            disabled={isPending || isEditing}
             onClick={GoBack}
             className=" min-w-30     py-6"
           />
@@ -172,7 +191,8 @@ export default function GitHubTab({ id, type }: Props) {
           <AppButton
             idleLabel="Deploy Site"
             className=" min-w-30 py-6"
-            isLoading={isPending}
+            isLoading={isPending || isEditing}
+            disabled={isPending || isEditing}
             type="submit"
             loadingLabel="Deploying..."
             successLabel="Started"
