@@ -31,7 +31,7 @@ export default function ViewDeploylogs({ id }: Props) {
         />
       )}
       <div className="space-y-2">
-        <TerminalLogs logs={logs} />
+        <TerminalLogs logs={logs} deployment_id={id} />
       </div>
     </div>
   );

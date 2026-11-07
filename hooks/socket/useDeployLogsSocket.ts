@@ -1,34 +1,37 @@
+"use client";
+
+import { useEffect } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { getSocket } from "@/utils/socket";
-import { Dispatch, SetStateAction, useEffect } from "react";
-type LogLine = { stream: string; line: string };
-export function useServiceSocket(
-  service_id: string,
+
+export type LiveLogLine = { stream: string; line: string; ts: string };
+
+export function useDeployLogsSocket(
   deployment_id: string,
-  setLogs: Dispatch<SetStateAction<LogLine[]>>,
+  setLogs: Dispatch<SetStateAction<LiveLogLine[]>>,
 ) {
-  function JoinDeploySocket() {
+  useEffect(() => {
+    if (!deployment_id) return;
     const socket = getSocket();
 
-    function JoinDeployRoom() {
-      socket.emit("join_deployment", { deployment_id, service_id });
+    function joinDeployRoom() {
+      socket.emit("join_deployment", deployment_id);
     }
 
-    function handleLogs(lines: LogLine[]) {
+    function handleLogs(lines: LiveLogLine[]) {
       setLogs((prev) => [...prev, ...lines]);
     }
 
-    socket.on("connect", JoinDeployRoom);
+    socket.on("connect", joinDeployRoom);
+    socket.on("deploy_logs", handleLogs);
 
-    if (socket.connected) JoinDeployRoom();
+    if (socket.connected) joinDeployRoom();
     else socket.connect();
 
     return function () {
-      socket.off("connect", JoinDeployRoom);
+      socket.emit("leave", `deployment:${deployment_id}`);
+      socket.off("connect", joinDeployRoom);
       socket.off("deploy_logs", handleLogs);
     };
-  }
-
-  useEffect(() => {
-    JoinDeploySocket();
-  }, [service_id, deployment_id]);
+  }, [deployment_id, setLogs]);
 }
