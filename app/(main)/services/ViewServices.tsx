@@ -117,6 +117,7 @@ export const STATUS_META: Record<number, { label: string; className: string }> =
 export const TRIGGER_LABEL: Record<number, string> = {
   [DEPLOY_TRIGGER.AUTO]: "Auto",
   [DEPLOY_TRIGGER.MANUAL]: "Manual",
+  [DEPLOY_TRIGGER.ROLLBACK]: "Rollback",
 };
 
 export function formatDuration(start: string | null, end: string | null) {

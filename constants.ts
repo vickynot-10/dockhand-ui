@@ -11,9 +11,11 @@ export const DEPLOYMENT_STATUS = {
   CANCELLED: 5,
   SUSPENDED: 6,
   SUPERSEDED: 7,
+  STOPPED: 8,
 };
 
 export const DEPLOY_TRIGGER = {
   AUTO: 1,
   MANUAL: 2,
+  ROLLBACK: 3,
 };
