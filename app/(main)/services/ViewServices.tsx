@@ -41,6 +41,9 @@ import AppIcon from "@/components/common/AppIcons";
 import AppIconButton from "@/components/common/AppIconButton";
 import { ViewServiceSkeleton } from "@/components/common/AppLoaders";
 import { useRollbackDeploy } from "@/hooks/queries/useDeploy";
+import { useServiceStatusSocket } from "@/hooks/socket/useServiceSocket";
+import Tooltip from "@/components/common/ToolTip";
+import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 type Props = {
   id: string;
   type: string;
@@ -265,9 +268,11 @@ function DockerDeployTable({
                   {deployment.container_name ?? deployment.id.slice(0, 8)}
                 </span>
                 {deployment.error && (
-                  <span className="max-w-xs truncate text-xs text-destructive">
-                    {deployment.error}
-                  </span>
+                  <Tooltip content={deployment.error}>
+                    <span className="max-w-fit truncate text-xs text-destructive cursor-default">
+                      {deployment.error}
+                    </span>
+                  </Tooltip>
                 )}
               </div>
             </TableCell>
@@ -318,9 +323,11 @@ function GithubDeployTable({
                   {deployment.id.slice(0, 8)}
                 </span>
                 {deployment.error && (
-                  <span className="max-w-xs truncate text-xs text-destructive">
-                    {deployment.error}
-                  </span>
+                  <Tooltip content={deployment.error}>
+                    <span className=" max-w-fit truncate text-xs text-destructive cursor-default">
+                      {deployment.error}
+                    </span>
+                  </Tooltip>
                 )}
               </div>
             </TableCell>
@@ -435,6 +442,7 @@ export function ServiceHeader({ service }: { service: ServiceData }) {
 export default function ViewService({ id, type }: Props) {
   const router = useRouter();
   const { data, isLoading } = useGetServicebyID(id);
+  useServiceStatusSocket(id);
   const { mutate: bulkMutate, isPending: isBulkPending } =
     useServicesBulkAction();
   const { mutate: deployMutate, isPending: isDeploying } = useDeployService();
