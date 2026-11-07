@@ -14,6 +14,7 @@ import {
   Rocket,
   Trash2,
   Plug,
+  Settings2,
 } from "lucide-react";
 import { DEPLOYMENT_STATUS, DEPLOY_TRIGGER, DEPLOY_TYPE } from "@/constants";
 import {
@@ -39,6 +40,7 @@ import ServicesSuspendDeleteDialog from "../projects/components/ServicesDialog";
 import AppIcon from "@/components/common/AppIcons";
 import AppIconButton from "@/components/common/AppIconButton";
 import { ViewServiceSkeleton } from "@/components/common/AppLoaders";
+import { useRollbackDeploy } from "@/hooks/queries/useDeploy";
 type Props = {
   id: string;
   type: string;
@@ -58,7 +60,7 @@ type ServiceData = {
   branch: string | null;
 };
 
-type Deployment = {
+export type Deployment = {
   id: string;
   status: number;
   trigger: number;
@@ -75,47 +77,49 @@ type TableProps = {
   deployments: Deployment[];
   enabled: boolean;
   type: string;
+  service_id: string;
 };
 
 const EMPTY: Deployment[] = [];
 
-const STATUS_META: Record<number, { label: string; className: string }> = {
-  [DEPLOYMENT_STATUS.QUEUED]: {
-    label: "Queued",
-    className: "text-muted-foreground",
-  },
-  [DEPLOYMENT_STATUS.BUILDING]: {
-    label: "Building",
-    className: "text-blue-600",
-  },
-  [DEPLOYMENT_STATUS.RUNNING]: {
-    label: "Running",
-    className: "text-green-600",
-  },
-  [DEPLOYMENT_STATUS.FAILED]: {
-    label: "Failed",
-    className: "text-destructive",
-  },
-  [DEPLOYMENT_STATUS.CANCELLED]: {
-    label: "Cancelled",
-    className: "text-muted-foreground",
-  },
-  [DEPLOYMENT_STATUS.SUSPENDED]: {
-    label: "Suspended",
-    className: "text-amber-600",
-  },
-  [DEPLOYMENT_STATUS.SUPERSEDED]: {
-    label: "Superseded",
-    className: "text-muted-foreground",
-  },
-};
+export const STATUS_META: Record<number, { label: string; className: string }> =
+  {
+    [DEPLOYMENT_STATUS.QUEUED]: {
+      label: "Queued",
+      className: "text-muted-foreground",
+    },
+    [DEPLOYMENT_STATUS.BUILDING]: {
+      label: "Building",
+      className: "text-blue-600",
+    },
+    [DEPLOYMENT_STATUS.RUNNING]: {
+      label: "Running",
+      className: "text-green-600",
+    },
+    [DEPLOYMENT_STATUS.FAILED]: {
+      label: "Failed",
+      className: "text-destructive",
+    },
+    [DEPLOYMENT_STATUS.CANCELLED]: {
+      label: "Cancelled",
+      className: "text-muted-foreground",
+    },
+    [DEPLOYMENT_STATUS.SUSPENDED]: {
+      label: "Suspended",
+      className: "text-amber-600",
+    },
+    [DEPLOYMENT_STATUS.SUPERSEDED]: {
+      label: "Superseded",
+      className: "text-muted-foreground",
+    },
+  };
 
-const TRIGGER_LABEL: Record<number, string> = {
+export const TRIGGER_LABEL: Record<number, string> = {
   [DEPLOY_TRIGGER.AUTO]: "Auto",
   [DEPLOY_TRIGGER.MANUAL]: "Manual",
 };
 
-function formatDuration(start: string | null, end: string | null) {
+export function formatDuration(start: string | null, end: string | null) {
   if (!start || !end) return "-";
   const seconds = Math.round(
     (new Date(end).getTime() - new Date(start).getTime()) / 1000,
@@ -124,7 +128,7 @@ function formatDuration(start: string | null, end: string | null) {
   return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
-function shortImage(tag: string | null) {
+export function shortImage(tag: string | null) {
   if (!tag) return "-";
   const [name, digest] = tag.split("@");
   return digest ? `${name}@${digest.slice(7, 19)}` : tag;
@@ -133,10 +137,15 @@ function shortImage(tag: string | null) {
 function LogsCell({
   deployment_id,
   type,
+  service_id,
 }: {
   deployment_id: string;
   type: string;
+  service_id: string;
 }) {
+  const { mutate, isPending, variables } = useRollbackDeploy();
+
+  const isRollingBack = isPending && variables.deployment_id === deployment_id;
   return (
     <TableCell className="w-10 pe-10">
       <AppIconButton
@@ -146,8 +155,14 @@ function LogsCell({
       />
 
       <AppIconButton
-        icon={<RotateCcwIcon className="size-4" />}
+        icon={
+          <RotateCcwIcon
+            className={cn("size-4", isRollingBack && "animate-spin")}
+          />
+        }
         tooltip="Rollback"
+        disabled={isRollingBack}
+        onClick={() => mutate({ deployment_id, service_id: service_id })}
       />
     </TableCell>
   );
@@ -220,7 +235,12 @@ function EmptyRow() {
   );
 }
 
-function DockerDeployTable({ deployments, enabled, type }: TableProps) {
+function DockerDeployTable({
+  deployments,
+  enabled,
+  type,
+  service_id,
+}: TableProps) {
   return (
     <Table>
       <TableHeader>
@@ -255,7 +275,11 @@ function DockerDeployTable({ deployments, enabled, type }: TableProps) {
             </TableCell>
             <TriggerCell trigger={deployment.trigger} />
             <TimeCells deployment={deployment} />
-            <LogsCell deployment_id={deployment.id} type={type} />
+            <LogsCell
+              deployment_id={deployment.id}
+              type={type}
+              service_id={service_id}
+            />
           </TableRow>
         ))}
         {deployments.length === 0 && <EmptyRow />}
@@ -264,7 +288,12 @@ function DockerDeployTable({ deployments, enabled, type }: TableProps) {
   );
 }
 
-function GithubDeployTable({ deployments, enabled, type }: TableProps) {
+function GithubDeployTable({
+  deployments,
+  enabled,
+  type,
+  service_id,
+}: TableProps) {
   return (
     <Table>
       <TableHeader>
@@ -299,7 +328,11 @@ function GithubDeployTable({ deployments, enabled, type }: TableProps) {
             </TableCell>
             <TriggerCell trigger={deployment.trigger} />
             <TimeCells deployment={deployment} />
-            <LogsCell deployment_id={deployment.id} type={type} />
+            <LogsCell
+              deployment_id={deployment.id}
+              type={type}
+              service_id={service_id}
+            />
           </TableRow>
         ))}
         {deployments.length === 0 && <EmptyRow />}
@@ -333,6 +366,12 @@ export function ServiceHeader({ service }: { service: ServiceData }) {
             Suspended
           </Badge>
         )}
+
+        <AppIconButton
+          icon={<Settings2 className=" size-4" />}
+          tooltip="Edit Service"
+          href={`/projects/${service.project_id}/edit/${service.id}`}
+        />
       </div>
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
@@ -485,12 +524,14 @@ export default function ViewService({ id, type }: Props) {
               deployments={deployments}
               enabled={service.enabled}
               type={type}
+              service_id={service.id}
             />
           ) : (
             <GithubDeployTable
               deployments={deployments}
               enabled={service.enabled}
               type={type}
+              service_id={service.id}
             />
           )}
         </div>

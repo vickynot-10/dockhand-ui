@@ -221,15 +221,8 @@ export function BuildSettingsFields() {
           id="output_directory"
           placeholder="dist"
           aria-invalid={!!errors.output_directory}
-          {...register("output_directory", {
-            required: "Output directory is required",
-          })}
+          {...register("output_directory")}
         />
-        {errors.output_directory && (
-          <p className="mt-1 text-sm text-destructive">
-            {errors.output_directory.message}
-          </p>
-        )}
       </FieldRow>
     </>
   );

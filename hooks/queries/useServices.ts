@@ -35,6 +35,8 @@ export function useGetServicebyIDEdit(id: string) {
 }
 
 export function useDeployService() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (service_id: string) => {
       const res = await api.post("/services/deploy", {
@@ -42,9 +44,12 @@ export function useDeployService() {
       });
       return res.data ?? null;
     },
-    onSuccess: (res) => {
+    onSuccess: (res, service_id) => {
       if (res?.success) {
         toast.success(res.msg);
+        queryClient.invalidateQueries({
+          queryKey: [QUERY_KEY, service_id],
+        });
       }
     },
   });
@@ -103,13 +108,12 @@ export function useServicesBulkAction() {
         queryClient.invalidateQueries({
           queryKey: ["projects", "services", vars.project_id],
         });
-        if (vars.action !== "delete") {
-          vars.ids.forEach((service_id) =>
-            queryClient.invalidateQueries({
-              queryKey: [QUERY_KEY, service_id],
-            }),
-          );
-        }
+
+        vars.ids.forEach((service_id) =>
+          queryClient.invalidateQueries({
+            queryKey: [QUERY_KEY, service_id],
+          }),
+        );
       }
     },
   });

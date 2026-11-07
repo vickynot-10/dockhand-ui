@@ -101,6 +101,14 @@ export function ViewDeploylogsSkeleton() {
         <Skeleton className="h-5 w-14 rounded-full" />
       </div>
 
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg border p-4 sm:grid-cols-3 lg:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-5 w-20" />
+          </div>
+        ))}
+      </div>
       <div className="space-y-2">
         <div className="flex items-center gap-5">
           <div className="flex items-center gap-2">
