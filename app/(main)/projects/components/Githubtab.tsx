@@ -1,5 +1,6 @@
 "use client";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
+import type { FieldErrors } from "react-hook-form";
 import {
   BranchField,
   BuildSettingsFields,
@@ -19,6 +20,7 @@ import { GitHubFormValues, GithubProps } from "@/types/services.types";
 import { useEffect } from "react";
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost";
+const PUBLIC_REPO_REGEX = /^[\w.-]+\/[\w.-]+$/;
 
 export default function GitHubTab({
   id,
@@ -63,7 +65,18 @@ export default function GitHubTab({
   const router = useRouter();
 
   useEffect(() => {
-    register("repo_id", { required: "Repository is required" });
+    register("repo_id", {
+      validate: (value, form_values) => {
+        if (form_values.repo_type === GITHUB_REPO_TYPE.PUBLIC) return true;
+        return !!value || "Repository is required";
+      },
+    });
+    register("repo_full_name", {
+      validate: (value, form_values) => {
+        if (form_values.repo_type !== GITHUB_REPO_TYPE.PUBLIC) return true;
+        return PUBLIC_REPO_REGEX.test(value) || "Enter as owner/repo";
+      },
+    });
     register("branch", { required: "Branch is required" });
     register("root_directory", { required: "Root directory is required" });
   }, [register]);
@@ -80,6 +93,10 @@ export default function GitHubTab({
 
   function GoBack() {
     router.push(`/projects/${id}`);
+  }
+
+  function handleInvalidSubmit(formErrors: FieldErrors<GitHubFormValues>) {
+    console.log("invalid", formErrors);
   }
 
   async function handleValidSubmit(values: GitHubFormValues) {
@@ -113,7 +130,10 @@ export default function GitHubTab({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(handleValidSubmit)} className="w-full">
+      <form
+        onSubmit={handleSubmit(handleValidSubmit, handleInvalidSubmit)}
+        className="w-full"
+      >
         <div className="w-full space-y-6 pb-6">
           <FieldRow
             label="Name"

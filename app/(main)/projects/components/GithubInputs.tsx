@@ -52,7 +52,7 @@ export function RepoTypeField() {
     setValue("repo_type", next);
     setValue("repo_id", null);
     setValue("repo_full_name", "");
-    setValue("name", "");
+
     setValue("branch", "");
     setValue("root_directory", "/");
   }
