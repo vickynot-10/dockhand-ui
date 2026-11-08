@@ -7,11 +7,13 @@ import {
   RepoField,
   RepoTypeField,
   RootDirectoryField,
+  RuntimeField,
+  StartCommandField,
 } from "./GithubInputs";
 import { EnvVarsField } from "./EnvVars";
 import FieldRow from "./FieldRow";
 import { Input } from "@/components/ui/input";
-import { DEPLOY_TYPE, GITHUB_REPO_TYPE } from "@/constants";
+import { DEPLOY_TYPE, GITHUB_REPO_TYPE, RUNTIMES } from "@/constants";
 import { AppButton } from "@/components/common/AppButton";
 import { useRouter } from "next/navigation";
 import { useEditService, useSaveService } from "@/hooks/queries/useServices";
@@ -36,6 +38,8 @@ export default function GitHubTab({
       repo_id: null,
       repo_type: GITHUB_REPO_TYPE.PRIVATE,
       repo_full_name: "",
+      start_command: "",
+      runtime: RUNTIMES.NODE,
       branch: "",
       root_directory: "/",
       port: 3000,
@@ -202,7 +206,9 @@ export default function GitHubTab({
             <>
               <BranchField />
               <RootDirectoryField />
-              <BuildSettingsFields />
+              {type === "web" && <RuntimeField />}
+              <BuildSettingsFields type={type} />
+              {type === "web" && <StartCommandField />}
               <EnvVarsField />
             </>
           )}

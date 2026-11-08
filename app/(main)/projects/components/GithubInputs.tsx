@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+
+import { Code, Coffee, Cog, FlaskConical, Gem, Hexagon } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RUNTIMES } from "@/constants";
 import {
   Select,
   SelectContent,
@@ -38,6 +41,129 @@ function useRepoParts() {
   const [owner = "", repo = ""] = repoFullName.split("/");
   return { owner, repo };
 }
+
+const RUNTIME_OPTIONS = [
+  {
+    value: RUNTIMES.NODE,
+    label: "Node.js",
+    icon: Hexagon,
+    build_command: "npm install && npm run build",
+    start_command: "npm start",
+    port: 3000,
+  },
+  {
+    value: RUNTIMES.PYTHON,
+    label: "Python",
+    icon: Code,
+    build_command: "pip install --no-cache-dir -r requirements.txt",
+    start_command: "gunicorn app:app -b 0.0.0.0:$PORT",
+    port: 8000,
+  },
+  {
+    value: RUNTIMES.JAVA,
+    label: "Java",
+    icon: Coffee,
+    build_command: "mvn -q package -DskipTests",
+    start_command: "java -jar target/app.jar",
+    port: 8080,
+  },
+  {
+    value: RUNTIMES.RUBY,
+    label: "Ruby",
+    icon: Gem,
+    build_command: "bundle install",
+    start_command: "bundle exec rails server -b 0.0.0.0 -p $PORT",
+    port: 3000,
+  },
+  {
+    value: RUNTIMES.ELXIR,
+    label: "Elixir",
+    icon: FlaskConical,
+    build_command: "mix deps.get && mix compile",
+    start_command: "mix phx.server",
+    port: 4000,
+  },
+  {
+    value: RUNTIMES.RUST,
+    label: "Rust",
+    icon: Cog,
+    build_command: "cargo build --release",
+    start_command: "./target/release/app",
+    port: 8080,
+  },
+];
+
+export function RuntimeField() {
+  const { setValue, control } = useFormContext<GitHubFormValues>();
+  const runtime = useWatch({ control, name: "runtime" });
+
+  const RUNTIME_ITEMS = RUNTIME_OPTIONS.map((item) => ({
+    value: item.value,
+    label: item.label,
+  }));
+  function handleRuntimeChange(v: unknown) {
+    const next = RUNTIME_OPTIONS.find((item) => item.value === Number(v));
+    if (!next) return;
+    setValue("runtime", next.value);
+    setValue("build_command", next.build_command);
+    setValue("start_command", next.start_command);
+    setValue("port", next.port);
+  }
+
+  return (
+    <FieldRow label="Runtime" description="Language your service runs on">
+      <Select
+        value={runtime}
+        onValueChange={handleRuntimeChange}
+        items={RUNTIME_ITEMS}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Select runtime" />
+        </SelectTrigger>
+        <SelectContent alignItemWithTrigger={false} sideOffset={4}>
+          {RUNTIME_OPTIONS.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              <span className="flex items-center gap-2">
+                <item.icon className="size-4" />
+                {item.label}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </FieldRow>
+  );
+}
+
+export function StartCommandField() {
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<GitHubFormValues>();
+
+  return (
+    <FieldRow
+      label="Start command"
+      description="Must listen on 0.0.0.0 and the port above (use $PORT)"
+      htmlFor="start_command"
+    >
+      <Input
+        id="start_command"
+        placeholder="npm start"
+        aria-invalid={!!errors.start_command}
+        {...register("start_command", {
+          required: "Start command is required",
+        })}
+      />
+      {errors.start_command && (
+        <p className="mt-1 text-sm text-destructive">
+          {errors.start_command.message}
+        </p>
+      )}
+    </FieldRow>
+  );
+}
+
 export function RepoTypeField() {
   const { setValue, control } = useFormContext<GitHubFormValues>();
   const repoType = useWatch({ control, name: "repo_type" });
@@ -273,8 +399,8 @@ export function RootDirectoryField() {
     </FieldRow>
   );
 }
-
-export function BuildSettingsFields() {
+export function BuildSettingsFields({ type }: { type: string }) {
+  const isStatic = type === "static";
   const {
     register,
     setValue,
@@ -295,9 +421,9 @@ export function BuildSettingsFields() {
   const detectedBuildCommand: string = detectData?.data?.build_command ?? "";
 
   useEffect(() => {
-    if (!detectData) return;
+    if (!isStatic || !detectData) return;
     setValue("build_command", detectedBuildCommand);
-  }, [detectData, detectedBuildCommand, setValue]);
+  }, [isStatic, detectData, detectedBuildCommand, setValue]);
 
   return (
     <>
@@ -324,18 +450,20 @@ export function BuildSettingsFields() {
         )}
       </FieldRow>
 
-      <FieldRow
-        label="Output directory"
-        description="Folder with the built static files"
-        htmlFor="output_directory"
-      >
-        <Input
-          id="output_directory"
-          placeholder="dist"
-          aria-invalid={!!errors.output_directory}
-          {...register("output_directory")}
-        />
-      </FieldRow>
+      {isStatic && (
+        <FieldRow
+          label="Output directory"
+          description="Folder with the built static files"
+          htmlFor="output_directory"
+        >
+          <Input
+            id="output_directory"
+            placeholder="dist"
+            aria-invalid={!!errors.output_directory}
+            {...register("output_directory")}
+          />
+        </FieldRow>
+      )}
     </>
   );
 }

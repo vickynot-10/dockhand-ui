@@ -13,7 +13,9 @@ export interface GitHubFormValues extends CommonFields {
   repo_full_name: string;
   branch: string;
   root_directory: string;
+  runtime: number;
   build_command: string;
+  start_command: string;
   output_directory: string;
   env_vars: { key: string; value: string }[];
 }
