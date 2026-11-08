@@ -6,6 +6,7 @@ import { ViewDeploylogsSkeleton } from "@/components/common/AppLoaders";
 import DeploymentDetails from "./DeploymentDetails";
 import { DEPLOY_TYPE } from "@/constants";
 import type { Deployment } from "../ViewServices";
+import { useBreadcrumbItems } from "@/contexts/breadcrumb-provider";
 type Props = {
   id: string;
   type: string;
@@ -13,11 +14,26 @@ type Props = {
 
 const EMPTY: DeploymentLog[] = [];
 
-export default function ViewDeploylogs({ id }: Props) {
+export default function ViewDeploylogs({ id, type }: Props) {
   const { data, isLoading } = useGetDeployLogsByID(id);
 
-  if (isLoading) return <ViewDeploylogsSkeleton />;
   const service = data?.data?.service ?? null;
+
+  useBreadcrumbItems([
+    {
+      label: "Services",
+      href: service ? `/projects/${service.project_id}` : "/projects",
+    },
+    {
+      label: service ? `Deployments - ${service.name}` : "Deployments",
+      href: service ? `/services/${type}/${service.id}/deploys` : "/projects",
+    },
+    {
+      label: "Deployment Logs",
+    },
+  ]);
+
+  if (isLoading) return <ViewDeploylogsSkeleton />;
   const deployment = (data?.data?.deployment ?? null) as Deployment | null;
   if (!service) return null;
   const logs = (data?.data?.deployment_logs ?? EMPTY) as DeploymentLog[];

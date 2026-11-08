@@ -44,6 +44,7 @@ import { useRollbackDeploy } from "@/hooks/queries/useDeploy";
 import { useServiceStatusSocket } from "@/hooks/socket/useServiceSocket";
 import Tooltip from "@/components/common/ToolTip";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useBreadcrumbItems } from "@/contexts/breadcrumb-provider";
 type Props = {
   id: string;
   type: string;
@@ -455,6 +456,14 @@ export default function ViewService({ id, type }: Props) {
 
   const service = (data?.data?.services ?? null) as ServiceData | null;
   const deployments = (data?.data?.deployments ?? EMPTY) as Deployment[];
+
+  useBreadcrumbItems([
+    {
+      label: "Services",
+      href: service ? `/projects/${service.project_id}` : "/projects",
+    },
+    { label: service ? `Deployments - ${service.name}` : "Deployments" },
+  ]);
 
   if (isLoading) return <ViewServiceSkeleton />;
 

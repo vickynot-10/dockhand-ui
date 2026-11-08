@@ -55,6 +55,7 @@ import {
 
 import AppIcon from "@/components/common/AppIcons";
 import { ProjectServicesSkeleton } from "@/components/common/AppLoaders";
+import { useBreadcrumbItems } from "@/contexts/breadcrumb-provider";
 
 type Props = {
   id: string;
@@ -154,6 +155,7 @@ export default function ProjectServices({ id }: Props) {
   const services = (project_data?.services ?? []) as Service[];
 
   const { mutate: ResumeMutate } = useServicesBulkAction();
+  useBreadcrumbItems([{ label: "Services", href: "/services" }]);
   const { mutate, isPending, variables: deployingId } = useDeployService();
 
   const [dialog, setDialog] = useState<{

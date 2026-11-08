@@ -7,12 +7,21 @@ import GitHubTab from "../../../components/Githubtab";
 import DockerTab from "../../../components/DockerTab";
 
 import { Props } from "@/types/services.types";
+import { useBreadcrumbItems } from "@/contexts/breadcrumb-provider";
 
 const TABS = ["GitHub", "Docker"];
 
 export default function CreateNewService({ id, type }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(1);
+
+  useBreadcrumbItems([
+    {
+      label: "Services",
+      href: id ? `/projects/${id}` : "/projects",
+    },
+    { label: "Create Service" },
+  ]);
 
   const changeTab = (index: number) => {
     if (index === activeIndex) return;

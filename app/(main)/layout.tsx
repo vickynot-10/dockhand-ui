@@ -7,6 +7,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import AppHeader from "@/components/common/AppHeader";
+import { BreadcrumbProvider } from "@/contexts/breadcrumb-provider";
 export default async function AppLayout({
   children,
 }: Readonly<{
@@ -23,8 +24,11 @@ export default async function AppLayout({
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <AppHeader />
-          <div className="flex-1 p-4">{children}</div>
+          <BreadcrumbProvider>
+            <AppHeader />
+
+            <div className="flex-1 p-4">{children}</div>
+          </BreadcrumbProvider>
         </SidebarInset>
       </SidebarProvider>
     </>

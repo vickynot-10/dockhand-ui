@@ -76,9 +76,6 @@ export function AppSidebar() {
 
     { title: "Deploys", icon: Rocket, href: `${base}/deploys` },
     { title: "Settings", icon: Settings, href: `${base}/settings` },
-    { label: "Monitor", isSection: true },
-    { title: "Logs", icon: ScrollText, href: `${base}/logs` },
-    { title: "Metrics", icon: Activity, href: `${base}/metrics` },
   ];
   return (
     <Sidebar className="px-0 h-full [&_[data-slot=sidebar-inner]]:h-full">
@@ -195,8 +192,9 @@ function NavMainItem({
   const hasChildren = !!item.children?.length;
   const pathname = usePathname();
   const isParentActive = item.href
-    ? pathname === item.href ||
-      (item.href !== "/" && pathname.startsWith(`${item.href}/`))
+    ? item.href === "/"
+      ? pathname === "/" || pathname.startsWith("/projects")
+      : pathname === item.href || pathname.startsWith(`${item.href}/`)
     : false;
 
   const [isOpen, setIsOpen] = React.useState(isParentActive);

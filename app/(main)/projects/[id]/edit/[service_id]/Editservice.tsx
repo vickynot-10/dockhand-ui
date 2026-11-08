@@ -8,6 +8,7 @@ import { formatDateTime } from "@/lib/date";
 import AppIcon from "@/components/common/AppIcons";
 import GitHubTab from "../../../components/Githubtab";
 import { EditServiceSkeleton } from "@/components/common/AppLoaders";
+import { useBreadcrumbItems } from "@/contexts/breadcrumb-provider";
 
 export type Props = {
   id: string;
@@ -18,6 +19,13 @@ export default function EditService({ service_id, id }: Props) {
   const { data, isLoading } = useGetServicebyIDEdit(service_id);
 
   const service = data?.data ?? null;
+  useBreadcrumbItems([
+    {
+      label: "Services",
+      href: service ? `/projects/${service.project_id}` : "/projects",
+    },
+    { label: service ? `Edit Service - ${service.name}` : "Edit Service" },
+  ]);
 
   if (isLoading) return <EditServiceSkeleton />;
 
