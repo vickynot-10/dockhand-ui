@@ -4,12 +4,13 @@ import {
   BranchField,
   BuildSettingsFields,
   RepoField,
+  RepoTypeField,
   RootDirectoryField,
 } from "./GithubInputs";
 import { EnvVarsField } from "./EnvVars";
 import FieldRow from "./FieldRow";
 import { Input } from "@/components/ui/input";
-import { DEPLOY_TYPE } from "@/constants";
+import { DEPLOY_TYPE, GITHUB_REPO_TYPE } from "@/constants";
 import { AppButton } from "@/components/common/AppButton";
 import { useRouter } from "next/navigation";
 import { useEditService, useSaveService } from "@/hooks/queries/useServices";
@@ -31,6 +32,7 @@ export default function GitHubTab({
       name: "",
       slug: "",
       repo_id: null,
+      repo_type: GITHUB_REPO_TYPE.PRIVATE,
       repo_full_name: "",
       branch: "",
       root_directory: "/",
@@ -85,6 +87,7 @@ export default function GitHubTab({
       ...values,
       env_vars: values.env_vars.filter((v) => v.key.trim()),
       deploy_type: DEPLOY_TYPE.GITHUB,
+      repo_type: values.repo_type,
       type,
       project_id: id,
     };
@@ -173,6 +176,7 @@ export default function GitHubTab({
               <p className="text-sm text-destructive">{errors.port.message}</p>
             )}
           </FieldRow>
+          <RepoTypeField />
           <RepoField />
           {repoFullName && (
             <>

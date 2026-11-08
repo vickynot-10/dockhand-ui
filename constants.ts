@@ -19,3 +19,8 @@ export const DEPLOY_TRIGGER = {
   MANUAL: 2,
   ROLLBACK: 3,
 };
+
+export const GITHUB_REPO_TYPE = {
+  PUBLIC: 1,
+  PRIVATE: 2,
+};

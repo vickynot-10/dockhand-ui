@@ -8,6 +8,7 @@ interface CommonFields {
 }
 
 export interface GitHubFormValues extends CommonFields {
+  repo_type: number;
   repo_id: number | null;
   repo_full_name: string;
   branch: string;

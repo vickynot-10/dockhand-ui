@@ -1,7 +1,9 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -19,13 +21,113 @@ import FieldRow from "./FieldRow";
 import { DirectoryTree } from "./DirectoryTree";
 import { Input } from "@/components/ui/input";
 import { GitHubFormValues } from "@/types/services.types";
+import { GITHUB_REPO_TYPE } from "@/constants";
 import { cn } from "@/lib/utils";
+
+function parseRepoInput(value: string) {
+  return value
+    .trim()
+    .replace(/^https?:\/\/github\.com\//, "")
+    .replace(/\.git$/, "")
+    .replace(/\/$/, "");
+}
 
 function useRepoParts() {
   const { control } = useFormContext<GitHubFormValues>();
   const repoFullName = useWatch({ control, name: "repo_full_name" });
   const [owner = "", repo = ""] = repoFullName.split("/");
   return { owner, repo };
+}
+export function RepoTypeField() {
+  const { setValue, control } = useFormContext<GitHubFormValues>();
+  const repoType = useWatch({ control, name: "repo_type" });
+
+  useEffect(() => {
+    if (!repoType) setValue("repo_type", GITHUB_REPO_TYPE.PRIVATE);
+  }, [repoType, setValue]);
+
+  function handleRepoTypeChange(v: unknown) {
+    const next = Number(v) || GITHUB_REPO_TYPE.PRIVATE;
+    if (next === repoType) return;
+    setValue("repo_type", next);
+    setValue("repo_id", null);
+    setValue("repo_full_name", "");
+    setValue("name", "");
+    setValue("branch", "");
+    setValue("root_directory", "/");
+  }
+
+  return (
+    <FieldRow
+      label="Repository type"
+      description="Private repos are picked from your GitHub account"
+    >
+      <RadioGroup
+        value={repoType || GITHUB_REPO_TYPE.PRIVATE}
+        onValueChange={handleRepoTypeChange}
+        className="flex items-center gap-6"
+      >
+        <div className="flex items-center gap-2">
+          <RadioGroupItem
+            value={GITHUB_REPO_TYPE.PRIVATE}
+            id="repo_type_private"
+          />
+          <Label htmlFor="repo_type_private">Private</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <RadioGroupItem
+            value={GITHUB_REPO_TYPE.PUBLIC}
+            id="repo_type_public"
+          />
+          <Label htmlFor="repo_type_public">Public</Label>
+        </div>
+      </RadioGroup>
+    </FieldRow>
+  );
+}
+function PublicRepoInput() {
+  const {
+    setValue,
+    control,
+    formState: { errors },
+  } = useFormContext<GitHubFormValues>();
+  const repoFullName = useWatch({ control, name: "repo_full_name" });
+  const [inputValue, setInputValue] = useState(repoFullName ?? "");
+
+  function commitRepo() {
+    const parsed = parseRepoInput(inputValue);
+    if (parsed === repoFullName) return;
+    setInputValue(parsed);
+    setValue("repo_full_name", parsed, { shouldValidate: true });
+    setValue("name", parsed.split("/")[1] ?? "");
+    setValue("branch", "");
+    setValue("root_directory", "/");
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    commitRepo();
+  }
+
+  return (
+    <>
+      <Input
+        id="repo_full_name"
+        placeholder="owner/repo or https://github.com/owner/repo"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onBlur={commitRepo}
+        onKeyDown={handleKeyDown}
+        aria-invalid={!!errors.repo_full_name}
+      />
+      {errors.repo_full_name && (
+        <p className="mt-1 text-sm text-destructive">
+          {errors.repo_full_name.message}
+        </p>
+      )}
+    </>
+  );
 }
 
 export function RepoField() {
@@ -35,6 +137,8 @@ export function RepoField() {
     formState: { errors },
   } = useFormContext<GitHubFormValues>();
   const repoId = useWatch({ control, name: "repo_id" });
+  const repoType = useWatch({ control, name: "repo_type" });
+  const isPublic = repoType === GITHUB_REPO_TYPE.PUBLIC;
 
   function handleRepoChange(id: number, selectedRepo: any) {
     if (id === repoId) return;
@@ -49,13 +153,21 @@ export function RepoField() {
   return (
     <FieldRow
       label="Repository"
-      description="Select the repository you want to deploy"
+      description={
+        isPublic
+          ? "Enter a public repository as owner/repo or its GitHub URL"
+          : "Select the repository you want to deploy"
+      }
     >
-      <RepoCombobox
-        value={repoId}
-        onChange={handleRepoChange}
-        error={errors.repo_id?.message}
-      />
+      {isPublic ? (
+        <PublicRepoInput />
+      ) : (
+        <RepoCombobox
+          value={repoId}
+          onChange={handleRepoChange}
+          error={errors.repo_id?.message}
+        />
+      )}
     </FieldRow>
   );
 }

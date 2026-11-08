@@ -15,6 +15,9 @@ import {
   X,
   Rocket,
   Edit2,
+  Terminal,
+  RotateCcw,
+  History,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -62,6 +65,7 @@ type Service = {
   service_name: string;
   deploy_type: number;
   type: "static" | "web";
+  host?: string;
   updated_on: string;
   enabled: boolean;
 };
@@ -423,7 +427,15 @@ export default function ProjectServices({ id }: Props) {
                         </TableCell>
                         <TableCell>
                           <Link
-                            href={`/services/${service.type}/${service.id}/deploys`}
+                            href={
+                              service.host
+                                ? `https://${service.host}`
+                                : `/services/${service.type}/${service.id}/deploys`
+                            }
+                            target={service.host ? "_blank" : undefined}
+                            rel={
+                              service.host ? "noopener noreferrer" : undefined
+                            }
                           >
                             <ServiceNameCell service={service} />
                           </Link>
@@ -454,6 +466,13 @@ export default function ProjectServices({ id }: Props) {
                               type="button"
                               tooltip="Edit Service"
                               href={`/projects/${id}/edit/${service.id}`}
+                            />
+
+                            <AppIconButton
+                              icon={<History className="size-4 " />}
+                              type="button"
+                              tooltip="View Deployments"
+                              href={`/services/${service.type}/${service.id}/deploys`}
                             />
 
                             {!service.enabled ? (

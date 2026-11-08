@@ -115,6 +115,10 @@ export const STATUS_META: Record<number, { label: string; className: string }> =
       label: "Superseded",
       className: "text-muted-foreground",
     },
+    [DEPLOYMENT_STATUS.STOPPED]: {
+      label: "Stopped",
+      className: "text-orange-600",
+    },
   };
 
 export const TRIGGER_LABEL: Record<number, string> = {
