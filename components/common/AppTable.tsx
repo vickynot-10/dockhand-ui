@@ -1,6 +1,4 @@
 "use client";
-
-import { ReactNode, useState } from "react";
 import {
   Table,
   TableBody,
@@ -9,259 +7,328 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Badge } from "../ui/badge";
+import { DEPLOY_TRIGGER, DEPLOY_TYPE, DEPLOYMENT_STATUS } from "@/constants";
+import { useRollbackDeploy } from "@/hooks/queries/useDeploy";
+import AppIconButton from "./AppIconButton";
+import { RotateCcwIcon, Search, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Hash } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import TableSkeletonRows from "@/loaders/app_table.loader";
-import Image from "next/image";
+import { formatRelative } from "@/lib/date";
+import { Skeleton } from "../ui/skeleton";
+import { Input } from "../ui/input";
+import { AnimatePresence, motion } from "motion/react";
+import AppIcon from "./AppIcons";
 
-export type AppTableColumn<T> = {
-  key: string;
-  label: ReactNode;
-  center?: boolean;
-  className?: string;
-  render?: (row: T, index: number) => ReactNode;
-};
-export type AppTablePageInfo = {
-  page: number;
-  pageSize: number;
+export const TRIGGER_LABEL: Record<number, string> = {
+  [DEPLOY_TRIGGER.AUTO]: "Auto",
+  [DEPLOY_TRIGGER.MANUAL]: "Manual",
+  [DEPLOY_TRIGGER.ROLLBACK]: "Rollback",
 };
 
-type AppTableProps<T> = {
-  columns: AppTableColumn<T>[];
-  data: T[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  onPageChange: (info: AppTablePageInfo) => void;
-  rowKey?: (row: T, index: number) => string | number;
-  loading?: boolean;
-  emptyMessage?: string;
-};
-
-const PAGE_SIZE_OPTIONS = [25, 50, 100];
-
-export function AppTable<T extends Record<string, unknown>>({
-  columns,
-  data,
-  totalCount,
-  page,
-  pageSize,
-  onPageChange,
-  rowKey,
-  loading,
-  emptyMessage = "No records found",
-}: AppTableProps<T>) {
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const [isEditing, setIsEditing] = useState(false);
-  const [inputValue, setInputValue] = useState(page.toString());
-
-  const goToPage = (nextPage: number) => {
-    if (nextPage < 1 || nextPage > totalPages) {
-      setInputValue(page.toString());
-      setIsEditing(false);
-      return;
-    }
-    setInputValue(nextPage.toString());
-    setIsEditing(false);
-    if (nextPage === page) return;
-    onPageChange({ page: nextPage, pageSize });
+export const STATUS_META: Record<number, { label: string; className: string }> =
+  {
+    [DEPLOYMENT_STATUS.QUEUED]: {
+      label: "Queued",
+      className: "text-muted-foreground",
+    },
+    [DEPLOYMENT_STATUS.BUILDING]: {
+      label: "Building",
+      className: "text-blue-600",
+    },
+    [DEPLOYMENT_STATUS.RUNNING]: {
+      label: "Running",
+      className: "text-green-600",
+    },
+    [DEPLOYMENT_STATUS.FAILED]: {
+      label: "Failed",
+      className: "text-destructive",
+    },
+    [DEPLOYMENT_STATUS.CANCELLED]: {
+      label: "Cancelled",
+      className: "text-muted-foreground",
+    },
+    [DEPLOYMENT_STATUS.SUSPENDED]: {
+      label: "Suspended",
+      className: "text-amber-600",
+    },
+    [DEPLOYMENT_STATUS.SUPERSEDED]: {
+      label: "Superseded",
+      className: "text-muted-foreground",
+    },
+    [DEPLOYMENT_STATUS.STOPPED]: {
+      label: "Stopped",
+      className: "text-orange-600",
+    },
   };
 
-  const changePageSize = (nextPageSize: number) => {
-    onPageChange({ page: 1, pageSize: nextPageSize });
-  };
+export function HeadCell({ children }: { children: React.ReactNode }) {
+  return (
+    <TableHead className="font-mono text-xs uppercase tracking-wider">
+      {children}
+    </TableHead>
+  );
+}
 
-  const handleInputSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = parseInt(inputValue);
-    if (!isNaN(parsed)) {
-      goToPage(parsed);
-    } else {
-      setInputValue(page.toString());
-      setIsEditing(false);
-    }
+export function AppTableHeader({
+  items,
+}: {
+  items: { label: string | null; id: number }[];
+}) {
+  return (
+    <TableHeader>
+      <TableRow className="hover:bg-transparent">
+        {items.map((el) => {
+          return <HeadCell key={el.id}>{el.label}</HeadCell>;
+        })}
+      </TableRow>
+    </TableHeader>
+  );
+}
+
+export function TriggerCell({ trigger }: { trigger: number }) {
+  return (
+    <TableCell>
+      <Badge variant="secondary">{TRIGGER_LABEL[trigger] ?? "-"}</Badge>
+    </TableCell>
+  );
+}
+
+export function LogsCell({
+  deployment_id,
+  type,
+  service_id,
+}: {
+  deployment_id: string;
+  type: string;
+  service_id: string;
+}) {
+  const { mutate, isPending, variables } = useRollbackDeploy();
+
+  const isRollingBack = isPending && variables.deployment_id === deployment_id;
+  return (
+    <TableCell className="w-10 pe-10">
+      <AppIconButton
+        icon={<Terminal className="size-4" />}
+        tooltip="View logs"
+        href={`/services/${type}/${deployment_id}/logs`}
+      />
+
+      <AppIconButton
+        icon={
+          <RotateCcwIcon
+            className={cn("size-4", isRollingBack && "animate-spin")}
+          />
+        }
+        tooltip="Rollback"
+        disabled={isRollingBack}
+        onClick={() => mutate({ deployment_id, service_id: service_id })}
+      />
+    </TableCell>
+  );
+}
+
+export function StatusCell({
+  status,
+  enabled,
+}: {
+  status: number;
+  enabled: boolean;
+}) {
+  const meta = STATUS_META[status] ?? {
+    label: "Unknown",
+    className: "text-muted-foreground",
   };
+  const isLive = enabled && status === DEPLOYMENT_STATUS.RUNNING;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-xl border border-border">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              {columns.map((column) => (
-                <TableHead
-                  key={column.key}
-                  className={cn(
-                    "text-muted-foreground  py-3 px-5",
-                    column.center && "text-center",
-                  )}
-                >
-                  {column.label}
-                </TableHead>
-              ))}
+    <TableCell>
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className={cn("capitalize", meta.className)}>
+          {meta.label}
+        </Badge>
+        {isLive && <Badge>Live</Badge>}
+      </div>
+    </TableCell>
+  );
+}
+
+export function EmptyRow({ text, colspan }: { text: string; colspan: number }) {
+  return (
+    <TableRow className="hover:bg-transparent">
+      <TableCell
+        colSpan={colspan}
+        className="h-24 text-center text-sm text-muted-foreground"
+      >
+        {text ? text : "Data not found"}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+export function formatDuration(start: string | null, end: string | null) {
+  if (!start || !end) return "-";
+  const seconds = Math.round(
+    (new Date(end).getTime() - new Date(start).getTime()) / 1000,
+  );
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+
+export function SearchInput({
+  search,
+  setSearch,
+  placeholder,
+}: {
+  search: string;
+  setSearch: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="relative w-full">
+      <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder={placeholder}
+        className="pl-8"
+      />
+    </div>
+  );
+}
+export function TableLoader() {
+  return (
+    <div className="space-y-2">
+      <Skeleton className="h-6 w-20" />
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <TableHead key={i}>
+                <Skeleton className="h-3 w-16" />
+              </TableHead>
+            ))}
+            <TableHead className="w-10 pe-10" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <TableRow key={i} className="h-14 hover:bg-transparent">
+              <TableCell>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-28" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-24" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-14 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-20" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-12" />
+              </TableCell>
+              <TableCell className="w-10 pe-10">
+                <div className="flex gap-1">
+                  <Skeleton className="size-8" />
+                  <Skeleton className="size-8" />
+                </div>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading && <TableSkeletonRows columns={columns.length} rows={5} />}
-
-            {!loading && data.length <= 0 && (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="!border-0">
-                  <NoDataFound />
-                </TableCell>
-              </TableRow>
-            )}
-
-            {!loading &&
-              data &&
-              data.length > 0 &&
-              data.map((row, rowIndex) => (
-                <TableRow key={rowKey ? rowKey(row, rowIndex) : rowIndex}>
-                  {columns.map((column) => (
-                    <TableCell
-                      key={column.key}
-                      className={cn(
-                        "py-5 px-5  !border-0",
-                        column.center && "text-center",
-                        column.className,
-                      )}
-                    >
-                      {column.render
-                        ? column.render(row, rowIndex)
-                        : (row[column.key] as ReactNode)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-        <div className="text-sm text-muted-foreground">
-          {totalCount > 0 && (
-            <span>
-              Showing {totalCount === 1 ? "1 entry" : `${totalCount} entries`}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2  flex-row">
-          <Select
-            value={String(pageSize)}
-            onValueChange={(value) => changePageSize(Number(value))}
-          >
-            <SelectTrigger className="h-8 w-[72px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PAGE_SIZE_OPTIONS.map((option) => (
-                <SelectItem key={option} value={String(option)}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex items-center gap-1 bg-background border rounded-xl p-1.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded-lg hover:bg-secondary/80"
-              disabled={page <= 1}
-              onClick={() => goToPage(page - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            <div className="flex items-center px-1 min-w-[110px] justify-center">
-              <AnimatePresence mode="wait">
-                {!isEditing ? (
-                  <motion.div
-                    key="viewer"
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    onClick={() => {
-                      setInputValue(page.toString());
-                      setIsEditing(true);
-                    }}
-                    className="flex items-center gap-1.5 cursor-pointer hover:bg-secondary/50 px-3 py-1 rounded-md transition-colors group"
-                  >
-                    <span className="text-sm font-semibold tabular-nums">
-                      {page}
-                    </span>
-                    <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                      of {totalPages}
-                    </span>
-                    <Hash className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </motion.div>
-                ) : (
-                  <motion.form
-                    key="editor"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    onSubmit={handleInputSubmit}
-                    className="flex items-center gap-1.5"
-                  >
-                    <Input
-                      autoFocus
-                      className="w-12 h-7 py-0 px-1 text-center text-xs tabular-nums focus-visible:ring-1"
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      onBlur={() => setIsEditing(false)}
-                      type="text"
-                      inputMode="numeric"
-                    />
-                    <Button
-                      type="submit"
-                      variant="secondary"
-                      size="sm"
-                      className="h-7 px-2 text-[10px] font-bold uppercase tracking-tighter cursor-pointer"
-                    >
-                      GO
-                    </Button>
-                  </motion.form>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded-lg hover:bg-secondary/80"
-              disabled={page >= totalPages}
-              onClick={() => goToPage(page + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
 
-export function NoDataFound({ text = "No Data Found" }: { text?: string }) {
+export function TimeCells({ deployment }: { deployment: any }) {
   return (
-    <div className="flex flex-col items-center justify-center w-full ">
-      <Image
-        src="/icons/no_data_found.svg"
-        alt="No Data Found"
-        height={400}
-        width={400}
-      />
-      <p className="text-sm font-medium text-muted-foreground/80">{text}</p>
+    <>
+      <TableCell className="text-muted-foreground">
+        {formatRelative(deployment.started_on ?? deployment.created_on)}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {formatDuration(deployment.started_on, deployment.finished_on)}
+      </TableCell>
+    </>
+  );
+}
+
+export function TableChipFilters({
+  key,
+  label,
+  active,
+  Icon,
+  toggleFilter,
+}: {
+  key: string;
+  label: string;
+  active: boolean;
+  Icon: any;
+
+  toggleFilter: (value: string) => void;
+}) {
+  return (
+    <button
+      key={key}
+      type="button"
+      onClick={() => toggleFilter(key)}
+      aria-pressed={active}
+      className={cn(
+        "relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+        active
+          ? "text-foreground"
+          : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      <AnimatePresence initial={false}>
+        {active && (
+          <motion.span
+            key="pill"
+            className="absolute inset-0 rounded-full bg-background shadow-sm"
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 30,
+            }}
+          />
+        )}
+      </AnimatePresence>
+      {Icon && <Icon className="relative size-4" />}
+      <span className="relative">{label}</span>
+    </button>
+  );
+}
+
+export function ServiceNameCell({
+  deploy_type,
+  service_name,
+  enabled,
+}: {
+  deploy_type: number;
+  service_name: string;
+  enabled: boolean;
+}) {
+  const isDocker = deploy_type === DEPLOY_TYPE.DOCKER;
+
+  return (
+    <div className="flex items-center gap-3">
+      <AppIcon type={isDocker ? "docker" : "github"} />
+      <span className="font-medium underline underline-offset-4">
+        {service_name}
+      </span>
+      {!enabled && (
+        <Badge variant="outline" className="text-amber-600">
+          Suspended
+        </Badge>
+      )}
     </div>
   );
 }

@@ -8,15 +8,12 @@ import {
   FileCode2,
   Server,
   Container,
-  Search,
   Trash2,
   PauseCircle,
   PlayCircle,
   X,
   Rocket,
   Edit2,
-  Terminal,
-  RotateCcw,
   History,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -35,7 +32,6 @@ import {
 import { useGetProjectServices } from "@/hooks/queries/useProjects";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -56,6 +52,11 @@ import {
 import AppIcon from "@/components/common/AppIcons";
 import { ProjectServicesSkeleton } from "@/components/common/AppLoaders";
 import { useBreadcrumbItems } from "@/contexts/breadcrumb-provider";
+import {
+  SearchInput,
+  ServiceNameCell,
+  TableChipFilters,
+} from "@/components/common/AppTable";
 
 type Props = {
   id: string;
@@ -95,24 +96,6 @@ const matchesFilter = (s: Service, key: FilterKey) => {
       return !s.enabled;
   }
 };
-
-function ServiceNameCell({ service }: { service: Service }) {
-  const isDocker = service.deploy_type === DEPLOY_TYPE.DOCKER;
-
-  return (
-    <div className="flex items-center gap-3">
-      <AppIcon type={isDocker ? "docker" : "github"} />
-      <span className="font-medium underline underline-offset-4">
-        {service.service_name}
-      </span>
-      {!service.enabled && (
-        <Badge variant="outline" className="text-amber-600">
-          Suspended
-        </Badge>
-      )}
-    </div>
-  );
-}
 
 const serviceTypes = [
   {
@@ -278,37 +261,13 @@ export default function ProjectServices({ id }: Props) {
                   {FILTERS.map(({ key, label, icon: Icon }) => {
                     const active = activeFilters.includes(key);
                     return (
-                      <button
+                      <TableChipFilters
                         key={key}
-                        type="button"
-                        onClick={() => toggleFilter(key)}
-                        aria-pressed={active}
-                        className={cn(
-                          "relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                          active
-                            ? "text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        <AnimatePresence initial={false}>
-                          {active && (
-                            <motion.span
-                              key="pill"
-                              className="absolute inset-0 rounded-full bg-background shadow-sm"
-                              initial={{ opacity: 0, scale: 0.85 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.85 }}
-                              transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 30,
-                              }}
-                            />
-                          )}
-                        </AnimatePresence>
-                        {Icon && <Icon className="relative size-4" />}
-                        <span className="relative">{label}</span>
-                      </button>
+                        label={label}
+                        active={active}
+                        Icon={Icon}
+                        toggleFilter={() => toggleFilter(key)}
+                      />
                     );
                   })}
                 </div>
@@ -370,15 +329,11 @@ export default function ProjectServices({ id }: Props) {
               </AnimatePresence>
             </div>
 
-            <div className="relative w-full ">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search services"
-                className="pl-8"
-              />
-            </div>
+            <SearchInput
+              search={search}
+              setSearch={setSearch}
+              placeholder="Search Services"
+            />
 
             <Table>
               <TableHeader>
@@ -439,7 +394,11 @@ export default function ProjectServices({ id }: Props) {
                               service.host ? "noopener noreferrer" : undefined
                             }
                           >
-                            <ServiceNameCell service={service} />
+                            <ServiceNameCell
+                              deploy_type={service.deploy_type}
+                              service_name={service.service_name}
+                              enabled={service.enabled}
+                            />
                           </Link>
                         </TableCell>
                         <TableCell>

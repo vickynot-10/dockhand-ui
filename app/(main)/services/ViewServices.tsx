@@ -9,42 +9,38 @@ import {
   GitBranch,
   PauseCircle,
   PlayCircle,
-  Terminal,
-  RotateCcwIcon,
   Rocket,
   Trash2,
   Plug,
   Settings2,
 } from "lucide-react";
-import { DEPLOYMENT_STATUS, DEPLOY_TRIGGER, DEPLOY_TYPE } from "@/constants";
+import { DEPLOYMENT_STATUS, DEPLOY_TYPE } from "@/constants";
 import {
   useDeployService,
   useGetServicebyID,
   useServicesBulkAction,
 } from "@/hooks/queries/useServices";
-import { formatRelative } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { ServiceActionType } from "../projects/components/ServicesDialog";
 import ServicesSuspendDeleteDialog from "../projects/components/ServicesDialog";
 
 import AppIcon from "@/components/common/AppIcons";
 import AppIconButton from "@/components/common/AppIconButton";
 import { ViewServiceSkeleton } from "@/components/common/AppLoaders";
-import { useRollbackDeploy } from "@/hooks/queries/useDeploy";
 import { useServiceStatusSocket } from "@/hooks/socket/useServiceSocket";
 import Tooltip from "@/components/common/ToolTip";
-import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useBreadcrumbItems } from "@/contexts/breadcrumb-provider";
+import {
+  AppTableHeader,
+  EmptyRow,
+  LogsCell,
+  StatusCell,
+  TimeCells,
+  TriggerCell,
+} from "@/components/common/AppTable";
 type Props = {
   id: string;
   type: string;
@@ -86,163 +82,22 @@ type TableProps = {
 
 const EMPTY: Deployment[] = [];
 
-export const STATUS_META: Record<number, { label: string; className: string }> =
-  {
-    [DEPLOYMENT_STATUS.QUEUED]: {
-      label: "Queued",
-      className: "text-muted-foreground",
-    },
-    [DEPLOYMENT_STATUS.BUILDING]: {
-      label: "Building",
-      className: "text-blue-600",
-    },
-    [DEPLOYMENT_STATUS.RUNNING]: {
-      label: "Running",
-      className: "text-green-600",
-    },
-    [DEPLOYMENT_STATUS.FAILED]: {
-      label: "Failed",
-      className: "text-destructive",
-    },
-    [DEPLOYMENT_STATUS.CANCELLED]: {
-      label: "Cancelled",
-      className: "text-muted-foreground",
-    },
-    [DEPLOYMENT_STATUS.SUSPENDED]: {
-      label: "Suspended",
-      className: "text-amber-600",
-    },
-    [DEPLOYMENT_STATUS.SUPERSEDED]: {
-      label: "Superseded",
-      className: "text-muted-foreground",
-    },
-    [DEPLOYMENT_STATUS.STOPPED]: {
-      label: "Stopped",
-      className: "text-orange-600",
-    },
-  };
-
-export const TRIGGER_LABEL: Record<number, string> = {
-  [DEPLOY_TRIGGER.AUTO]: "Auto",
-  [DEPLOY_TRIGGER.MANUAL]: "Manual",
-  [DEPLOY_TRIGGER.ROLLBACK]: "Rollback",
-};
-
-export function formatDuration(start: string | null, end: string | null) {
-  if (!start || !end) return "-";
-  const seconds = Math.round(
-    (new Date(end).getTime() - new Date(start).getTime()) / 1000,
-  );
-  if (seconds < 60) return `${seconds}s`;
-  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-}
-
 export function shortImage(tag: string | null) {
   if (!tag) return "-";
   const [name, digest] = tag.split("@");
   return digest ? `${name}@${digest.slice(7, 19)}` : tag;
 }
 
-function LogsCell({
-  deployment_id,
-  type,
-  service_id,
-}: {
-  deployment_id: string;
-  type: string;
-  service_id: string;
-}) {
-  const { mutate, isPending, variables } = useRollbackDeploy();
+const DOCKER_TABLE_HEADERS = [
+  { label: "Status", id: 1 },
+  { label: "Container", id: 2 },
+  { label: "Image", id: 3 },
 
-  const isRollingBack = isPending && variables.deployment_id === deployment_id;
-  return (
-    <TableCell className="w-10 pe-10">
-      <AppIconButton
-        icon={<Terminal className="size-4" />}
-        tooltip="View logs"
-        href={`/services/${type}/${deployment_id}/logs`}
-      />
-
-      <AppIconButton
-        icon={
-          <RotateCcwIcon
-            className={cn("size-4", isRollingBack && "animate-spin")}
-          />
-        }
-        tooltip="Rollback"
-        disabled={isRollingBack}
-        onClick={() => mutate({ deployment_id, service_id: service_id })}
-      />
-    </TableCell>
-  );
-}
-
-function HeadCell({ children }: { children: React.ReactNode }) {
-  return (
-    <TableHead className="font-mono text-xs uppercase tracking-wider">
-      {children}
-    </TableHead>
-  );
-}
-
-function StatusCell({
-  deployment,
-  enabled,
-}: {
-  deployment: Deployment;
-  enabled: boolean;
-}) {
-  const meta = STATUS_META[deployment.status] ?? {
-    label: "Unknown",
-    className: "text-muted-foreground",
-  };
-  const isLive = enabled && deployment.status === DEPLOYMENT_STATUS.RUNNING;
-
-  return (
-    <TableCell>
-      <div className="flex items-center gap-2">
-        <Badge variant="outline" className={cn("capitalize", meta.className)}>
-          {meta.label}
-        </Badge>
-        {isLive && <Badge>Live</Badge>}
-      </div>
-    </TableCell>
-  );
-}
-
-function TriggerCell({ trigger }: { trigger: number }) {
-  return (
-    <TableCell>
-      <Badge variant="secondary">{TRIGGER_LABEL[trigger] ?? "-"}</Badge>
-    </TableCell>
-  );
-}
-
-function TimeCells({ deployment }: { deployment: Deployment }) {
-  return (
-    <>
-      <TableCell className="text-muted-foreground">
-        {formatRelative(deployment.started_on ?? deployment.created_on)}
-      </TableCell>
-      <TableCell className="text-muted-foreground">
-        {formatDuration(deployment.started_on, deployment.finished_on)}
-      </TableCell>
-    </>
-  );
-}
-
-function EmptyRow() {
-  return (
-    <TableRow className="hover:bg-transparent">
-      <TableCell
-        colSpan={7}
-        className="h-24 text-center text-sm text-muted-foreground"
-      >
-        No deployments yet.
-      </TableCell>
-    </TableRow>
-  );
-}
+  { label: "Trigger", id: 4 },
+  { label: "Started", id: 5 },
+  { label: "Duration", id: 6 },
+  { label: null, id: 6 },
+];
 
 function DockerDeployTable({
   deployments,
@@ -252,21 +107,11 @@ function DockerDeployTable({
 }: TableProps) {
   return (
     <Table>
-      <TableHeader>
-        <TableRow className="hover:bg-transparent">
-          <HeadCell>Status</HeadCell>
-          <HeadCell>Container</HeadCell>
-          <HeadCell>Image</HeadCell>
-          <HeadCell>Trigger</HeadCell>
-          <HeadCell>Started</HeadCell>
-          <HeadCell>Duration</HeadCell>
-          <HeadCell>{null}</HeadCell>
-        </TableRow>
-      </TableHeader>
+      <AppTableHeader items={DOCKER_TABLE_HEADERS} />
       <TableBody>
         {deployments.map((deployment) => (
           <TableRow key={deployment.id} className="h-14">
-            <StatusCell deployment={deployment} enabled={enabled} />
+            <StatusCell status={deployment.status} enabled={enabled} />
             <TableCell>
               <div className="flex flex-col">
                 <span className="font-mono text-sm">
@@ -293,11 +138,24 @@ function DockerDeployTable({
             />
           </TableRow>
         ))}
-        {deployments.length === 0 && <EmptyRow />}
+        {deployments.length === 0 && (
+          <EmptyRow text="Deployment not found !" colspan={7} />
+        )}
       </TableBody>
     </Table>
   );
 }
+
+const GITHUB_TABLE_HEADERS = [
+  { label: "Status", id: 1 },
+  { label: "Deployment", id: 2 },
+  { label: "Commit", id: 3 },
+
+  { label: "Trigger", id: 4 },
+  { label: "Started", id: 5 },
+  { label: "Duration", id: 6 },
+  { label: null, id: 6 },
+];
 
 function GithubDeployTable({
   deployments,
@@ -307,21 +165,11 @@ function GithubDeployTable({
 }: TableProps) {
   return (
     <Table>
-      <TableHeader>
-        <TableRow className="hover:bg-transparent">
-          <HeadCell>Status</HeadCell>
-          <HeadCell>Deployment</HeadCell>
-          <HeadCell>Commit</HeadCell>
-          <HeadCell>Trigger</HeadCell>
-          <HeadCell>Started</HeadCell>
-          <HeadCell>Duration</HeadCell>
-          <HeadCell>{null}</HeadCell>
-        </TableRow>
-      </TableHeader>
+      <AppTableHeader items={GITHUB_TABLE_HEADERS} />
       <TableBody>
         {deployments.map((deployment) => (
           <TableRow key={deployment.id} className="h-14">
-            <StatusCell deployment={deployment} enabled={enabled} />
+            <StatusCell status={deployment.status} enabled={enabled} />
             <TableCell>
               <div className="flex flex-col">
                 <span className="font-mono text-sm">
@@ -348,7 +196,9 @@ function GithubDeployTable({
             />
           </TableRow>
         ))}
-        {deployments.length === 0 && <EmptyRow />}
+        {deployments.length === 0 && (
+          <EmptyRow text="Deployment not found !" colspan={7} />
+        )}
       </TableBody>
     </Table>
   );

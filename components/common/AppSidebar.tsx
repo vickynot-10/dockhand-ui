@@ -21,6 +21,7 @@ import {
   Settings,
   ScrollText,
   Activity,
+  Plug,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,10 @@ export type NavItem = {
 export const navData: NavItem[] = [
   { label: "Overview", isSection: true },
   { title: "Projects", icon: Workflow, href: "/" },
+  { title: "Deployments", icon: Activity, href: "/deployments" },
+  { label: "Manage", isSection: true },
+  { title: "Integrations", icon: Plug, href: "/integrations" },
+  { title: "Settings", icon: Settings, href: "/settings" },
 ];
 
 export function AppSidebar() {

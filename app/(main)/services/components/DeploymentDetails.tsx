@@ -3,14 +3,12 @@
 import { formatRelative } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Deployment, shortImage } from "../ViewServices";
 import {
-  Deployment,
   STATUS_META,
   TRIGGER_LABEL,
   formatDuration,
-  shortImage,
-} from "../ViewServices";
-
+} from "@/components/common/AppTable";
 function Detail({
   label,
   children,
