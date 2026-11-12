@@ -16,7 +16,8 @@ export function useGetServicebyID(id: string) {
       return res.data ?? null;
     },
     enabled: !!id,
-    staleTime: Infinity,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 }
 

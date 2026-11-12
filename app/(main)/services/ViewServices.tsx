@@ -119,7 +119,7 @@ function DockerDeployTable({
                 </span>
                 {deployment.error && (
                   <Tooltip content={deployment.error}>
-                    <span className="max-w-fit truncate text-xs text-destructive cursor-default">
+                    <span className="block max-w-[400px] truncate text-xs text-destructive cursor-default">
                       {deployment.error}
                     </span>
                   </Tooltip>
@@ -173,11 +173,11 @@ function GithubDeployTable({
             <TableCell>
               <div className="flex flex-col">
                 <span className="font-mono text-sm">
-                  {deployment.id.slice(0, 8)}
+                  {deployment.container_name ?? deployment.id.slice(0, 8)}
                 </span>
                 {deployment.error && (
                   <Tooltip content={deployment.error}>
-                    <span className=" max-w-fit truncate text-xs text-destructive cursor-default">
+                    <span className="block max-w-[400px] truncate text-xs text-destructive cursor-default">
                       {deployment.error}
                     </span>
                   </Tooltip>
