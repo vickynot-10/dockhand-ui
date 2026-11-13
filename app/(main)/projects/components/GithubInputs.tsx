@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-
+import { Checkbox } from "@/components/ui/checkbox";
 import { Code, Coffee, Cog, FlaskConical, Gem, Hexagon } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { RUNTIMES } from "@/constants";
@@ -93,6 +93,32 @@ const RUNTIME_OPTIONS = [
   },
 ];
 
+export function UseDockerfileField() {
+  const { setValue, clearErrors, control } = useFormContext<GitHubFormValues>();
+  const isDockerfile = useWatch({ control, name: "use_dockerfile" });
+
+  function handleDockerfileChange(checked: boolean) {
+    setValue("use_dockerfile", checked);
+    if (checked) clearErrors(["build_command", "start_command"]);
+  }
+
+  return (
+    <FieldRow
+      label="Dockerfile"
+      description="Build with the Dockerfile in the root directory instead of build and start commands"
+    >
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="use_dockerfile"
+          checked={!!isDockerfile}
+          onCheckedChange={handleDockerfileChange}
+        />
+        <Label htmlFor="use_dockerfile">Use repository Dockerfile</Label>
+      </div>
+    </FieldRow>
+  );
+}
+
 export function RuntimeField() {
   const { setValue, control } = useFormContext<GitHubFormValues>();
   const runtime = useWatch({ control, name: "runtime" });
@@ -152,7 +178,10 @@ export function StartCommandField() {
         placeholder="npm start"
         aria-invalid={!!errors.start_command}
         {...register("start_command", {
-          required: "Start command is required",
+          validate: (value, form_values) =>
+            form_values.use_dockerfile ||
+            !!value ||
+            "Start command is required",
         })}
       />
       {errors.start_command && (
@@ -439,7 +468,10 @@ export function BuildSettingsFields({ type }: { type: string }) {
           }
           aria-invalid={!!errors.build_command}
           {...register("build_command", {
-            required: "Build command is required",
+            validate: (value, form_values) =>
+              form_values.use_dockerfile ||
+              !!value ||
+              "Build command is required",
           })}
         />
 

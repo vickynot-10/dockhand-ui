@@ -9,6 +9,7 @@ import {
   RootDirectoryField,
   RuntimeField,
   StartCommandField,
+  UseDockerfileField,
 } from "./GithubInputs";
 import { EnvVarsField } from "./EnvVars";
 import FieldRow from "./FieldRow";
@@ -44,6 +45,7 @@ export default function GitHubTab({
       root_directory: "/",
       port: 3000,
       build_command: "",
+      use_dockerfile: false,
       output_directory: "",
       env_vars: [{ key: "", value: "" }],
     },
@@ -61,6 +63,7 @@ export default function GitHubTab({
   const repoFullName = useWatch({ control, name: "repo_full_name" });
   const projectName = useWatch({ control, name: "name" });
   const projectSlug = useWatch({ control, name: "slug" });
+  const isDockerfile = useWatch({ control, name: "use_dockerfile" });
 
   const { mutate, isPending } = useSaveService();
 
@@ -99,10 +102,6 @@ export default function GitHubTab({
     router.push(`/projects/${id}`);
   }
 
-  function handleInvalidSubmit(formErrors: FieldErrors<GitHubFormValues>) {
-    console.log("invalid", formErrors);
-  }
-
   async function handleValidSubmit(values: GitHubFormValues) {
     const payload = {
       ...values,
@@ -134,10 +133,7 @@ export default function GitHubTab({
 
   return (
     <FormProvider {...methods}>
-      <form
-        onSubmit={handleSubmit(handleValidSubmit, handleInvalidSubmit)}
-        className="w-full"
-      >
+      <form onSubmit={handleSubmit(handleValidSubmit)} className="w-full">
         <div className="w-full space-y-6 pb-6">
           <FieldRow
             label="Name"
@@ -206,9 +202,14 @@ export default function GitHubTab({
             <>
               <BranchField />
               <RootDirectoryField />
-              {type === "web" && <RuntimeField />}
-              <BuildSettingsFields type={type} />
-              {type === "web" && <StartCommandField />}
+              <UseDockerfileField />
+              {!isDockerfile && (
+                <>
+                  {type === "web" && <RuntimeField />}
+                  <BuildSettingsFields type={type} />
+                  {type === "web" && <StartCommandField />}
+                </>
+              )}
               <EnvVarsField />
             </>
           )}
