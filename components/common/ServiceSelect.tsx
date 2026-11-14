@@ -17,6 +17,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { useGetServices } from "@/hooks/queries/useCommon";
 
 export type ServiceOption = {
   id: string;
@@ -25,17 +26,17 @@ export type ServiceOption = {
   deploy_type: number;
 };
 
+const empty: never[] = [];
 export function ServiceSelect({
-  services,
   value,
   onChange,
-  loading,
 }: {
-  services: ServiceOption[];
   value: string | null;
   onChange: (id: string | null) => void;
-  loading?: boolean;
 }) {
+  const { data: servicesData, isLoading } = useGetServices();
+
+  const services: ServiceOption[] = servicesData?.data ?? empty;
   const [open, setOpen] = React.useState(false);
   const selected = services.find((service) => service.id === value);
 
@@ -52,7 +53,7 @@ export function ServiceSelect({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            disabled={loading}
+            disabled={isLoading}
             className="w-60 justify-between font-normal"
           />
         }

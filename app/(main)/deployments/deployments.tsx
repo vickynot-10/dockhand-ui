@@ -16,7 +16,7 @@ import {
 } from "@/components/common/AppTable";
 import { ServiceSelect } from "@/components/common/ServiceSelect";
 import { useGetDeployments } from "@/hooks/queries/useDeployments";
-import { useGetServices } from "@/hooks/queries/useCommon";
+
 import useDebounce from "@/hooks/app/useDebounce";
 import { DEPLOYMENT_STATUS } from "@/constants";
 
@@ -31,10 +31,10 @@ const TABLE_HEADERS = [
   { id: 6, label: "Duration" },
   { id: 7, label: null },
 ];
-
+const limit = 10;
 export default function Deployments() {
   const [page, setPage] = useState(1);
-  const limit = 10;
+
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const debounceSearch = useDebounce(search, 500);
@@ -45,10 +45,8 @@ export default function Deployments() {
     search: debounceSearch,
     service_id: selectedService,
   });
-  const { data: servicesData, isLoading: serviceLoading } = useGetServices();
 
   const rows = data?.data?.rows ?? empty;
-  const services = servicesData?.data ?? empty;
 
   function handleSearch(value: string) {
     setSearch(value);
@@ -68,12 +66,7 @@ export default function Deployments() {
           setSearch={handleSearch}
           placeholder="Search Deployments by service name"
         />
-        <ServiceSelect
-          services={services}
-          value={selectedService}
-          onChange={handleServiceChange}
-          loading={serviceLoading}
-        />
+        <ServiceSelect value={selectedService} onChange={handleServiceChange} />
       </div>
 
       {isLoading ? (
