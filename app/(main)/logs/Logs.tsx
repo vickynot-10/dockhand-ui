@@ -3,12 +3,24 @@
 import { SearchInput } from "@/components/common/AppTable";
 import { ServiceSelect } from "@/components/common/ServiceSelect";
 import useDebounce from "@/hooks/app/useDebounce";
+import { useGetLogs } from "@/hooks/queries/useLogs";
 import { useState } from "react";
 
 export default function LogsModule() {
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const debounceSearch = useDebounce(search, 500);
+  const [page, setSelectedPage] = useState(1);
+
+  const { data, isLoading } = useGetLogs({
+    page,
+    search: debounceSearch,
+    service_id: selectedService,
+  });
+
+  function LoadMore() {
+    setSelectedPage((prev) => prev + 1);
+  }
 
   function handleSearch(value: string) {
     setSearch(value);

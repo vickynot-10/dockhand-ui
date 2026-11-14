@@ -1,12 +1,5 @@
-import { GitHubFormValues, DockerFormValues } from "@/types/services.types";
 import { api } from "@/utils/axios";
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { toast } from "sonner";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 const QUERY_KEY = "deployments";
 
