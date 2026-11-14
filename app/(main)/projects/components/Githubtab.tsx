@@ -2,6 +2,7 @@
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import type { FieldErrors } from "react-hook-form";
 import {
+  AutoDeployField,
   BranchField,
   BuildSettingsFields,
   RepoField,
@@ -46,6 +47,7 @@ export default function GitHubTab({
       port: 3000,
       build_command: "",
       use_dockerfile: false,
+      auto_deploy: true,
       output_directory: "",
       env_vars: [{ key: "", value: "" }],
     },
@@ -63,6 +65,7 @@ export default function GitHubTab({
   const repoFullName = useWatch({ control, name: "repo_full_name" });
   const projectName = useWatch({ control, name: "name" });
   const projectSlug = useWatch({ control, name: "slug" });
+  const repoType = useWatch({ control, name: "repo_type" });
   const isDockerfile = useWatch({ control, name: "use_dockerfile" });
 
   const { mutate, isPending } = useSaveService();
@@ -108,6 +111,10 @@ export default function GitHubTab({
       env_vars: values.env_vars.filter((v) => v.key.trim()),
       deploy_type: DEPLOY_TYPE.GITHUB,
       repo_type: values.repo_type,
+      auto_deploy:
+        Number(values.repo_type) === GITHUB_REPO_TYPE.PUBLIC
+          ? false
+          : values.auto_deploy,
       type,
       project_id: id,
     };
@@ -201,6 +208,8 @@ export default function GitHubTab({
           {repoFullName && (
             <>
               <BranchField />
+              {repoType === GITHUB_REPO_TYPE.PRIVATE && <AutoDeployField />}
+
               <RootDirectoryField />
               <UseDockerfileField />
               {!isDockerfile && (

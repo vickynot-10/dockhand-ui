@@ -31,7 +31,8 @@ export function useGetServicebyIDEdit(id: string) {
       return res.data ?? null;
     },
     enabled: !!id,
-    staleTime: Infinity,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 }
 
@@ -76,7 +77,7 @@ export function useEditService() {
       const res = await api.put("/services", data);
       return res.data ?? null;
     },
-    onSuccess: (res: any) => {
+    onSuccess: (res: any, vars) => {
       if (res?.success) {
         toast.success(res.msg || "Service Saved successfully!");
       }

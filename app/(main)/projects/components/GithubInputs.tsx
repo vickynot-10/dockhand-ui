@@ -93,6 +93,31 @@ const RUNTIME_OPTIONS = [
   },
 ];
 
+export function AutoDeployField() {
+  const { setValue, control } = useFormContext<GitHubFormValues>();
+  const autoDeploy = useWatch({ control, name: "auto_deploy" });
+
+  function handleAutoDeployChange(checked: boolean) {
+    setValue("auto_deploy", checked, { shouldDirty: true });
+  }
+
+  return (
+    <FieldRow
+      label="Auto deploy"
+      description="Deploy automatically on every push to the selected branch"
+    >
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="auto_deploy"
+          checked={!!autoDeploy}
+          onCheckedChange={handleAutoDeployChange}
+        />
+        <Label htmlFor="auto_deploy">Enable auto deploy</Label>
+      </div>
+    </FieldRow>
+  );
+}
+
 export function UseDockerfileField() {
   const { setValue, clearErrors, control } = useFormContext<GitHubFormValues>();
   const isDockerfile = useWatch({ control, name: "use_dockerfile" });

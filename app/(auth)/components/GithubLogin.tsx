@@ -22,7 +22,7 @@ export default function GithubButton({
     <Button variant="outline" className="w-full py-6 text-sm font-semibold">
       <a
         href={`${process.env.NEXT_PUBLIC_API_URL}/api/auth/github`}
-        className=" flex flex-row items-center gap-3"
+        className=" flex w-full  justify-center flex-row items-center gap-3"
       >
         <GithubIcon className="mr-2 h-5 w-5" />
         {label}

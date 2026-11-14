@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
+import { useTheme } from "next-themes";
+import { MoonIcon, SunIcon } from "lucide-react";
 import { SignUpFormValues } from "@/types/auth.types";
 import { useSignup } from "@/hooks/queries/useAuth";
 import GithubButton from "../components/GithubLogin";
@@ -27,6 +28,11 @@ export default function SignUp() {
   } = useForm<SignUpFormValues>();
   const { isPending, mutate } = useSignup();
 
+  const { resolvedTheme, setTheme } = useTheme();
+
+  function handleThemeToggle() {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  }
   const onSubmit = (data: SignUpFormValues) => {
     mutate(data);
   };
@@ -41,15 +47,37 @@ export default function SignUp() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="flex flex-col justify-center p-4"
           >
-            <motion.h1
-              variants={fieldVariants}
-              custom={0}
-              initial="hidden"
-              animate="visible"
-              className="text-3xl font-bold text-foreground"
-            >
-              Create an account
-            </motion.h1>
+            <div className="flex flex-row items-center justify-between">
+              <motion.h1
+                variants={fieldVariants}
+                custom={0}
+                initial="hidden"
+                animate="visible"
+                className="text-3xl font-bold text-foreground"
+              >
+                Create an account
+              </motion.h1>
+
+              <motion.div
+                variants={fieldVariants}
+                custom={1}
+                initial="hidden"
+                animate="visible"
+                whileHover={{ scale: 1.1, rotate: 15 }}
+                whileTap={{ scale: 0.9, rotate: -15 }}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={handleThemeToggle}
+                >
+                  <SunIcon className="hidden dark:block" />
+                  <MoonIcon className="block dark:hidden" />
+                  <span className="sr-only">Toggle theme</span>
+                </Button>
+              </motion.div>
+            </div>
 
             <motion.p
               variants={fieldVariants}
