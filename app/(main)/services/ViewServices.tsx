@@ -41,6 +41,7 @@ import {
   TimeCells,
   TriggerCell,
 } from "@/components/common/AppTable";
+import { AppRunTimeBadge } from "@/components/common/AppRunTime";
 type Props = {
   id: string;
   type: string;
@@ -54,10 +55,12 @@ type ServiceData = {
   enabled: boolean;
   project_id: string;
   deploy_type: number;
+
   port: number;
   image_url: string | null;
   repo_full_name: string | null;
   branch: string | null;
+  runtime?: number;
 };
 
 export type Deployment = {
@@ -208,7 +211,7 @@ export function ServiceHeader({ service }: { service: ServiceData }) {
   const [copied, setCopied] = useState(false);
   const isDocker = service.deploy_type === DEPLOY_TYPE.DOCKER;
 
-  const url = service.host ? `http://${service.host}` : null;
+  const url = service.host ? service.host : null;
 
   async function copyUrl() {
     if (!url) return;
@@ -251,6 +254,7 @@ export function ServiceHeader({ service }: { service: ServiceData }) {
               <span>{service.branch}</span>
             </div>
           )}
+          {service.runtime && <AppRunTimeBadge type={service.runtime} />}
           {service.port && (
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Plug className="size-4" />
