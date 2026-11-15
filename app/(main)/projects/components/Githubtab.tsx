@@ -236,7 +236,11 @@ export default function GitHubTab({
           />
 
           <AppButton
-            idleLabel="Deploy Site"
+            idleLabel={
+              service_id
+                ? "Save Changes and Deploy Site"
+                : "Save and Deploy Site"
+            }
             className=" min-w-30 py-6"
             isLoading={isPending || isEditing}
             disabled={isPending || isEditing}

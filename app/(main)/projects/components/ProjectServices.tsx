@@ -383,23 +383,26 @@ export default function ProjectServices({ id }: Props) {
                           />
                         </TableCell>
                         <TableCell>
-                          <Link
+                          <a
                             href={
                               service.host
-                                ? `https://${service.host}`
+                                ? service.host
                                 : `/services/${service.type}/${service.id}/deploys`
                             }
-                            target={service.host ? "_blank" : undefined}
-                            rel={
-                              service.host ? "noopener noreferrer" : undefined
-                            }
+                            target="_blank"
+                            rel="noreferrer"
+                            className={cn(
+                              "inline-flex items-center gap-1 text-sm text-primary underline-offset-4 hover:underline",
+                              !service.enabled &&
+                                "pointer-events-none opacity-50",
+                            )}
                           >
                             <ServiceNameCell
                               deploy_type={service.deploy_type}
                               service_name={service.service_name}
                               enabled={service.enabled}
                             />
-                          </Link>
+                          </a>
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="capitalize">

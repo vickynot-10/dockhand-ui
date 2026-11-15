@@ -21,10 +21,9 @@ type LogParams = {
   limit: number;
   search?: string;
   service_id: string | null;
-  isLive: boolean;
 };
 
-export function useGetLogs({ limit, search, service_id, isLive }: LogParams) {
+export function useGetLogs({ limit, search, service_id }: LogParams) {
   return useInfiniteQuery({
     queryKey: [LOGS_QUERY_KEY, limit, search, service_id],
     initialPageParam: null as string | null,
@@ -39,7 +38,5 @@ export function useGetLogs({ limit, search, service_id, isLive }: LogParams) {
     placeholderData: keepPreviousData,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
-    refetchInterval: (query) =>
-      isLive && query.state.data?.pages.length === 1 ? 3000 : false,
   });
 }

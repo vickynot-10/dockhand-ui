@@ -58,7 +58,6 @@ export default function LogsModule() {
       limit,
       search: debounceSearch,
       service_id: selectedService,
-      isLive: isFollowing,
     });
 
   const lines: LogLine[] = data
