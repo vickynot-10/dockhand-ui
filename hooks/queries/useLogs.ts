@@ -4,15 +4,16 @@ import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 export const LOGS_QUERY_KEY = "logs";
 
 export type LogLine = {
-  id: string;
-  timestamp: string;
+  log_id: string;
+  ts: string;
   service_id: string;
   service_name: string;
   message: string;
+  stream: string;
 };
 
 export type LogPage = {
-  lines: LogLine[];
+  rows: LogLine[];
   has_more: boolean;
   next_cursor: string | null;
 };
