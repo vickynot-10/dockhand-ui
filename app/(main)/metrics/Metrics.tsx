@@ -4,13 +4,18 @@ import { useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { ServiceSelect } from "@/components/common/ServiceSelect";
 import { ContainerCards } from "./components/MetricContainer";
-import { DeploymentStats } from "./components/DeploymentsMetrics";
-import { MetricChart } from "./components/MetricChart";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ChartConfig } from "@/components/ui/chart";
 import { useGetMetrics } from "@/hooks/queries/useMetrics";
+import MetricStats from "./components/MetricStats";
+import {
+  DeployMentsDayChart,
+  ResourceChart,
+  StatusChart,
+} from "./components/MetricCharts";
 
+const BYTES_PER_KB = 1024;
 const BYTES_PER_MB = 1024 * 1024;
 
 const statusConfig = {
@@ -23,11 +28,6 @@ const cpuConfig = {
 
 const memoryConfig = {
   memory_mb: { label: "Memory (MB)", color: "var(--chart-3)" },
-} satisfies ChartConfig;
-
-const networkConfig = {
-  rx_mb: { label: "In (MB)", color: "var(--chart-4)" },
-  tx_mb: { label: "Out (MB)", color: "var(--chart-5)" },
 } satisfies ChartConfig;
 
 function MetricsSkeleton() {
@@ -49,17 +49,7 @@ export default function MetricsModule() {
 
   const containers = data?.containers ?? [];
 
-  const statusRows = data
-    ? [
-        { status: "Running", count: data.deployments.running },
-        { status: "Failed", count: data.deployments.failed },
-        { status: "Queued", count: data.deployments.queued },
-        { status: "Cancelled", count: data.deployments.cancelled },
-        { status: "Stopped", count: data.deployments.stopped },
-        { status: "Superseded", count: data.deployments.superseded },
-        { status: "Suspended", count: data.deployments.suspended },
-      ]
-    : [];
+  const deployment_dates = data?.deploymentsOverDays ?? [];
 
   const cpuRows = containers.map((item) => ({
     name: item.service_name,
@@ -71,10 +61,23 @@ export default function MetricsModule() {
     memory_mb: Number((item.memory_bytes / BYTES_PER_MB).toFixed(1)),
   }));
 
+  const maxNetworkBytes = Math.max(
+    0,
+    ...containers.flatMap((item) => [item.rx_bytes, item.tx_bytes]),
+  );
+  const isNetworkInMb = maxNetworkBytes >= BYTES_PER_MB;
+  const networkDivisor = isNetworkInMb ? BYTES_PER_MB : BYTES_PER_KB;
+  const networkUnit = isNetworkInMb ? "MB" : "KB";
+
+  const networkConfig = {
+    rx: { label: `In (${networkUnit})`, color: "var(--chart-4)" },
+    tx: { label: `Out (${networkUnit})`, color: "var(--chart-5)" },
+  } satisfies ChartConfig;
+
   const networkRows = containers.map((item) => ({
     name: item.service_name,
-    rx_mb: Number((item.rx_bytes / BYTES_PER_MB).toFixed(2)),
-    tx_mb: Number((item.tx_bytes / BYTES_PER_MB).toFixed(2)),
+    rx: Number((item.rx_bytes / networkDivisor).toFixed(2)),
+    tx: Number((item.tx_bytes / networkDivisor).toFixed(2)),
   }));
 
   function handleServiceChange(id: string | null) {
@@ -87,76 +90,46 @@ export default function MetricsModule() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Metrics</h1>
-        <div className="flex items-center gap-2">
-          <ServiceSelect value={serviceId} onChange={handleServiceChange} />
-          <Button
-            variant="secondary"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={isFetching}
-            aria-label="Refresh metrics"
-          >
-            {isFetching ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <RefreshCw size={16} />
-            )}
-          </Button>
-        </div>
+      <div className="flex items-center justify-end flex-row gap-2">
+        <ServiceSelect value={serviceId} onChange={handleServiceChange} />
+        <Button
+          variant="secondary"
+          size="icon"
+          onClick={handleRefresh}
+          disabled={isFetching}
+          aria-label="Refresh metrics"
+        >
+          {isFetching ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <RefreshCw size={16} />
+          )}
+        </Button>
       </div>
 
       {isLoading || !data ? (
         <MetricsSkeleton />
       ) : (
         <>
-          <DeploymentStats stats={data.deployments} />
+          <MetricStats stats={data.deployments} />
 
-          <MetricChart
-            title="Deployments by status"
-            description="Number of deployments in each status"
-            config={statusConfig}
-            data={statusRows}
-            xKey="status"
-            dataKeys={["count"]}
-          />
+          <DeployMentsDayChart deployment_dates={deployment_dates} />
 
-          <div className="space-y-3">
-            <h2 className="text-sm font-medium text-muted-foreground">
-              Running containers
-            </h2>
+          <div className=" grid grid-cols-1 md:grid-cols-2 gap-3 ">
             <ContainerCards containers={containers} />
+
+            <StatusChart stats={data.deployments} />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <MetricChart
-              title="CPU"
-              description="Percent of one core, per service"
-              config={cpuConfig}
-              data={cpuRows}
-              xKey="name"
-              dataKeys={["cpu"]}
-            />
-            <MetricChart
-              title="Memory"
-              description="Memory in use, per service"
-              config={memoryConfig}
-              data={memoryRows}
-              xKey="name"
-              dataKeys={["memory_mb"]}
-            />
-            <div className="lg:col-span-2">
-              <MetricChart
-                title="Network"
-                description="Total traffic since the container started"
-                config={networkConfig}
-                data={networkRows}
-                xKey="name"
-                dataKeys={["rx_mb", "tx_mb"]}
-              />
-            </div>
-          </div>
+          <ResourceChart
+            cpuRows={cpuRows}
+            memoryRows={memoryRows}
+            networkRows={networkRows}
+            cpuConfig={cpuConfig}
+            memoryConfig={memoryConfig}
+            networkConfig={networkConfig}
+            networkUnit={networkUnit}
+          />
         </>
       )}
     </div>
